@@ -1,0 +1,4 @@
+start le projet:
+python -m venv venv
+venv\Scripts\activate
+
