@@ -1,2 +1,3 @@
 gymansium
 gymnasium[box2d]
+torch

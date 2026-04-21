@@ -4,7 +4,7 @@ env = gym.make("LunarLander-v3", render_mode="human")
 obs, info = env.reset(seed=42)
 
 while True:
-    action = env.action_space.sample() # Actions aléatoires pour l'instant
+    action = env.action_space.sample()
     obs, reward, terminated, truncated, info = env.step(action)
 
     if terminated or truncated:
