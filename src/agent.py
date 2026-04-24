@@ -37,11 +37,11 @@ class ReplayBuffer:
 
     def __len__(self):
         return len(self.buffer)
-    
-def train_step(q_net, optimizer, states, actions, rewards, next_states, dones, gamma=0.99):
+
+def train_step(q_net, target_net, optimizer, states, actions, rewards, next_states, dones, gamma=0.99):
     q_values = q_net(states).gather(1, actions.unsqueeze(1)).squeeze(1)
     with torch.no_grad():
-        max_next_q_values = q_net(next_states).max(1)[0]
+        max_next_q_values = target_net(next_states).max(1)[0]
         target_q_values = rewards + gamma * max_next_q_values * (1 - dones)
     loss = F.mse_loss(q_values, target_q_values)
     optimizer.zero_grad()

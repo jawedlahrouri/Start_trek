@@ -8,8 +8,11 @@ env = gym.make("LunarLander-v3", render_mode="human")
 state_size = env.observation_space.shape[0]
 action_size = env.action_space.n
 q_net = QNetwork(state_size, action_size)
+target_net = QNetwork(state_size, action_size)
+target_net.load_state_dict(q_net.state_dict())
 optimizer = optim.Adam(q_net.parameters(), lr=1e-3)
 memory = ReplayBuffer(capacity=30000)
+TAU = 1e-3
 batch_size = 64
 episodes = 800
 epsilon = 1.0
@@ -37,14 +40,16 @@ for ep in range(episodes):
 
         if len(memory) > batch_size:
             states, actions, rewards, next_states, dones = memory.sample(batch_size)
-            loss = train_step(q_net, optimizer, states, actions, rewards, next_states, dones)
+            loss = train_step(q_net, target_net, optimizer, states, actions, rewards, next_states, dones)
+            for target_param, local_param in zip(target_net.parameters(), q_net.parameters()):
+                target_param.data.copy_(TAU * local_param.data + (1.0 - TAU) * target_param.data)
 
         score += reward
-        obs = next_obs 
+        obs = next_obs
     scores.append(score)
     score_avg = sum(scores[-100:]) / len(scores[-100:])
     epsilon = max(epsilon_min, epsilon * epsilon_decay)
     print(f"Épisode {ep} | Score: {score:.2f} | Moyenne (100 ep): {score_avg:.2f} | Epsilon: {epsilon:.2f}")
 env.close()
 torch.save(q_net.state_dict(), "lunar_lander_model.pth")
-print("Modèle sauvegardé avec succès sous 'lunar_lander_model.pth' !")
+print("Modèle sauvegardé avec succès 'lunar_lander_model.pth'  !")
