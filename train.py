@@ -3,7 +3,9 @@ import torch
 import torch.optim as optim
 import random
 from src.agent import QNetwork, ReplayBuffer, train_step
+from torch.utils.tensorboard import SummaryWriter
 
+writer = SummaryWriter(log_dir="runs/lunar_lander_v1") 
 env = gym.make("LunarLander-v3", render_mode="human")
 state_size = env.observation_space.shape[0]
 action_size = env.action_space.n
@@ -46,10 +48,16 @@ for ep in range(episodes):
 
         score += reward
         obs = next_obs
+        
     scores.append(score)
     score_avg = sum(scores[-100:]) / len(scores[-100:])
     epsilon = max(epsilon_min, epsilon * epsilon_decay)
+    
+    writer.add_scalar("Score/Episode", score, ep)
+    writer.add_scalar("Score/Moyenne_100", score_avg, ep)
     print(f"Épisode {ep} | Score: {score:.2f} | Moyenne (100 ep): {score_avg:.2f} | Epsilon: {epsilon:.2f}")
+
+writer.close() 
 env.close()
 torch.save(q_net.state_dict(), "lunar_lander_model.pth")
-print("Modèle sauvegardé avec succès 'lunar_lander_model.pth'  !")
+print("Modèle sauvegardé avec succès !")
