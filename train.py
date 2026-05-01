@@ -4,11 +4,16 @@ import torch
 import torch.optim as optim
 import random
 from torch.utils.tensorboard import SummaryWriter
+import sys
 from src.agent import QNetwork, ReplayBuffer, train_step
 from src.config_loader import load_config
 
-# Load configuration
-config = load_config()
+if len(sys.argv) > 1:
+    config_path = sys.argv[1]
+else:
+    config_path = "configs/default_config.yaml"
+
+config = load_config(config_path)
 env_config = config.get("environment", {})
 algo_config = config.get("algorithm", {})
 hypers = config.get("hyperparameters", {})

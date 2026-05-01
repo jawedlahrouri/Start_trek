@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 import gymnasium as gym
+import sys
 from src.config_loader import load_config
 
-config = load_config()
+if len(sys.argv) > 1:
+    config_path = sys.argv[1]
+else:
+    config_path = "configs/default_config.yaml"
+
+config = load_config(config_path)
 env_config = config.get("environment", {})
 seeds = config.get("seeds", {})
 
