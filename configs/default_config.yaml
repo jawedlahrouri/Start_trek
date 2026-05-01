@@ -1,0 +1,10 @@
+environment:
+  name: "LunarLander-v3"
+  seed: 67
+  render_mode: "human"
+
+training:
+  episodes: 500
+
+agent:
+  hidden_size: 64

@@ -1,7 +1,11 @@
 import gymnasium as gym
+from src.config_loader import load_config
 
-env = gym.make("LunarLander-v3", render_mode="human")
-obs, info = env.reset(seed=42)
+config = load_config()
+env_config = config.get("environment", {})
+
+env = gym.make(env_config.get("name"), render_mode=env_config.get("render_mode"))
+obs, info = env.reset(seed=env_config.get("seed"))
 
 while True:
     action = env.action_space.sample()

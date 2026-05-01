@@ -1,13 +1,25 @@
 import gymnasium as gym
 import torch
 from src.agent import QNetwork
+from src.config_loader import load_config
 
-env = gym.make("LunarLander-v3", render_mode="human")
+config = load_config()
+env_config = config.get("environment", {})
+train_config = config.get("training", {})
+agent_config = config.get("agent", {})
+
+env = gym.make(env_config.get("name"), render_mode=env_config.get("render_mode"))
 state_list = env.observation_space.shape[0]
 action_list = env.action_space.n
-q_net = QNetwork(state_list, action_list)
-episodes = 500
-SEED = 67
+
+q_net = QNetwork(
+    state_list, 
+    action_list, 
+    hidden_size=agent_config.get("hidden_size")
+)
+
+episodes = train_config.get("episodes")
+SEED = env_config.get("seed")
 
 for ep in range(episodes):
     obs, info = env.reset(seed=SEED if ep == 0 else None)
