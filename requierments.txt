@@ -1,4 +1,4 @@
-gymansium
+gymnasium
 gymnasium[box2d]
 torch
 pyyaml

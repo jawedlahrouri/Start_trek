@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import gymnasium as gym
 import torch
 from src.agent import QNetwork

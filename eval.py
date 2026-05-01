@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import gymnasium as gym
 from src.config_loader import load_config
 
