@@ -10,6 +10,8 @@ import concurrent.futures
 import torch
 from torch.utils.tensorboard import SummaryWriter
 from src.agents.dqn_agent import DQNAgent
+import time
+from datetime import timedelta
 
 WEBHOOK_URL = "https://discord.com/api/webhooks/1500467614869094431/jfb5ebL6sMKpXf5BJgSt0VboSH6AQd0BhWM5USgq1YXvurC834SMcw8zQhYLikzikhwk"
 
@@ -146,6 +148,7 @@ if __name__ == "__main__":
     send_discord_message(f"**DÉMARRAGE DU GRID SEARCH PARALLÉLISÉ SUR LE VPS**\n"
                          f"**{total_tests} combinaisons** à tester. On se revoit dans quelques jours !")
     max_workers = 6
+    start_time = time.time()
     with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
         futures = {executor.submit(run_single_test, i+1, total_tests, combo, fixed_hypers): combo for i, combo in enumerate(combinations)}
         for future in concurrent.futures.as_completed(futures):
@@ -161,6 +164,14 @@ if __name__ == "__main__":
                 os.makedirs("runs/grid_search/DQN", exist_ok=True)
                 with open("runs/grid_search/DQN/leaderboard_progressif.json", "w") as f:
                     json.dump(leaderboard, f, indent=4) 
+                tests_completed = len(leaderboard)
+                tests_remaining = total_tests - tests_completed
+                elapsed_time = time.time() - start_time
+                avg_time_per_test = elapsed_time / tests_completed 
+                eta_seconds = avg_time_per_test * tests_remaining
+                eta_formatted = str(timedelta(seconds=int(eta_seconds)))
+                elapsed_formatted = str(timedelta(seconds=int(elapsed_time)))
+                print(f"[{elapsed_formatted}] Test {test_number} terminé. ETA : ~{eta_formatted} restants.")
                 is_top_3 = False
                 is_top_1 = False
                 for rank, entry in enumerate(leaderboard[:3]):
@@ -173,16 +184,16 @@ if __name__ == "__main__":
 
                 if is_top_1:
                     msg = (f"🚨 🏆 **NOUVEAU LEADER ABSOLU (TOP 1) !** 🏆 🚨\n"
-                           f"**Avancement:** {len(leaderboard)}/{total_tests}\n"
+                           f"**Avancement:** {tests_completed}/{total_tests} (ETA: ⏳ `{eta_formatted}`)\n"
                            f"**Évaluation Officielle:** `{eval_score:.2f} pts` 🚀 *(Train: {train_score:.2f})*\n"
                            f"**Configuration :**\n{param_str}")
                 elif is_top_3:
                     msg = (f"🌟 **NOUVELLE ENTRÉE DANS LE TOP 3 !** 🌟\n"
-                           f"**Avancement:** {len(leaderboard)}/{total_tests}\n"
+                           f"**Avancement:** {tests_completed}/{total_tests} (ETA: ⏳ `{eta_formatted}`)\n"
                            f"**Évaluation Officielle:** `{eval_score:.2f} pts` *(Train: {train_score:.2f})*\n"
                            f"**Configuration :**\n{param_str}")
                 else:
-                    msg = (f"⚙️ Test {test_number} terminé ({len(leaderboard)}/{total_tests}).\n"
+                    msg = (f"⚙️ Test {test_number} terminé ({tests_completed}/{total_tests}). ETA: ⏳ `{eta_formatted}`\n"
                            f"**Algo:** `{combo['algorithm']}` | **Score Éval:** `{eval_score:.2f} pts` *(Train: {train_score:.2f})*\n"
                            f"(Pas de changement au sommet).")
 
