@@ -75,7 +75,7 @@ class DQNAgent(BaseAgent):
 
     def update(self):
         if len(self.memory) < self.batch_size:
-            return   
+            return None
         states, actions, rewards, next_states, dones = self.memory.sample(self.batch_size)
         q_values = self.q_net(states).gather(1, actions.unsqueeze(1)).squeeze(1)
         with torch.no_grad():
@@ -87,10 +87,11 @@ class DQNAgent(BaseAgent):
         self.optimizer.step()
         if self.update_type == "soft":
             for target_param, local_param in zip(self.target_net.parameters(), self.q_net.parameters()):
-                target_param.data.copy_(self.tau * local_param.data + (1.0 - self.tau) * target_param.data)      
+                target_param.data.copy_(self.tau * local_param.data + (1.0 - self.tau) * target_param.data)
         elif self.update_type == "hard":
             if self.steps_done % self.target_update_freq == 0:
                 self.target_net.load_state_dict(self.q_net.state_dict())
+        return loss.item()
 
     def decay_epsilon(self):
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
