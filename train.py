@@ -1,24 +1,80 @@
+import os
 import gymnasium as gym
-import torch
-from src.agent import QNetwork
+import sys
+from torch.utils.tensorboard import SummaryWriter
+from src.config_loader import load_config
+from src.agents.dqn_agent import DQNAgent
 
-env = gym.make("LunarLander-v3", render_mode="human")
-state_list = env.observation_space.shape[0]
-action_list = env.action_space.n
-q_net = QNetwork(state_list, action_list)
-episodes = 500
-SEED = 67
+if len(sys.argv) > 1:
+    config_path = sys.argv[1]
+else:
+    config_path = "configs/default_config.yaml"
+config = load_config(config_path)
+env_config = config.get("environment", {})
+algo_config = config.get("algorithm", {})
+hypers = config.get("hyperparameters", {})
+seeds = config.get("seeds", {})
+train_config = config.get("training", {})
+env = gym.make(env_config.get("name"), render_mode=env_config.get("render_mode"))
+state_size = env.observation_space.shape[0]
+action_size = env.action_space.n
+
+algo_name = algo_config.get("name")
+if algo_name == "DQN" or algo_name == "DQN-Fast":
+    agent = DQNAgent(state_size, action_size, hypers)
+else:
+    raise ValueError(f"Algorithme {algo_name} non supporté.")
+
+writer = SummaryWriter(log_dir=algo_config.get("log_dir"))
+episodes = train_config.get("episodes")
+seed = seeds.get("train")
+scores = []
 
 for ep in range(episodes):
-    obs, info = env.reset(seed=SEED if ep == 0 else None)
+    obs, info = env.reset(seed=seed if ep == 0 else None)
     done = False
     score = 0
+    steps = 0 
     
     while not done:
-        action = env.action_space.sample() 
+        action = agent.select_action(obs, ep)
         next_obs, reward, terminated, truncated, info = env.step(action)
+        done = terminated or truncated
+        agent.step(obs, action, reward, next_obs, done)
+        agent.update()
         score += reward
         obs = next_obs
-        done = terminated or truncated
-    print(f"Épisode {ep} terminé avec un score de {score:.2f}")
+        steps += 1
+    if hasattr(agent, "decay_epsilon"):
+        agent.decay_epsilon()
+        
+    cause = "unknown"
+    if truncated: cause = "sleep" 
+    elif terminated:
+        if abs(obs[0]) >= 1.0: cause = "out-of-view"
+        elif reward < -50: cause = "crash"
+        else: cause = "safe-landing"
+    scores.append(score)
+    score_avg = sum(scores[-100:]) / len(scores[-100:])
+    logs = agent.get_logs()
+
+    writer.add_scalar("Score/Episode", score, ep)
+    writer.add_scalar("Score/Moyenne_100", score_avg, ep)
+    writer.add_scalar("Stats/Episode_Length", steps, ep)
+    for key, val in logs.items():
+        writer.add_scalar(f"Stats/{key.capitalize()}", val, ep)
+    writer.add_scalar("Cause/Crash", 1 if cause == "crash" else 0, ep)
+    writer.add_scalar("Cause/Safe_landing", 1 if cause == "safe-landing" else 0, ep)
+
+    print(f"Ep {ep} | Score: {score:>7.2f} | Moy(100): {score_avg:>7.2f} | Fin: {cause}")
+
+writer.close() 
 env.close()
+
+save_filename = algo_config.get("save_path", "model.pth")
+save_dir = "assets/agents_save"
+
+os.makedirs(save_dir, exist_ok=True)
+final_save_path = os.path.join(save_dir, os.path.basename(save_filename))
+agent.save(final_save_path)
+print(f"Modèle sauvegardé avec succès")
