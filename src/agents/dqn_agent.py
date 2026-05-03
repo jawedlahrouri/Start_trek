@@ -50,6 +50,9 @@ class DQNAgent(BaseAgent):
         self.batch_size = hypers.get("batch_size")
         self.gamma = hypers.get("gamma")
         self.tau = hypers.get("tau")
+        self.update_type = hypers.get("update_type", "soft") 
+        self.target_update_freq = hypers.get("target_update_freq", 1000)
+        self.steps_done = 0
         self.epsilon = hypers.get("epsilon_start")
         self.epsilon_decay = hypers.get("epsilon_decay")
         self.epsilon_min = hypers.get("epsilon_min")
@@ -65,6 +68,7 @@ class DQNAgent(BaseAgent):
 
     def step(self, state, action, reward, next_state, done):
         self.memory.push(state, action, reward, next_state, done)
+        self.steps_done += 1
 
     def update(self):
         if len(self.memory) < self.batch_size:
@@ -79,8 +83,12 @@ class DQNAgent(BaseAgent):
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-        for target_param, local_param in zip(self.target_net.parameters(), self.q_net.parameters()):
-            target_param.data.copy_(self.tau * local_param.data + (1.0 - self.tau) * target_param.data)
+        if self.update_type == "soft":
+            for target_param, local_param in zip(self.target_net.parameters(), self.q_net.parameters()):
+                target_param.data.copy_(self.tau * local_param.data + (1.0 - self.tau) * target_param.data)   
+        elif self.update_type == "hard":
+            if self.steps_done % self.target_update_freq == 0:
+                self.target_net.load_state_dict(self.q_net.state_dict())
 
     def decay_epsilon(self):
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
