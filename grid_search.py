@@ -10,16 +10,19 @@ from src.agents.dqn_agent import DQNAgent
 WEBHOOK_URL = "https://discord.com/api/webhooks/1500467614869094431/jfb5ebL6sMKpXf5BJgSt0VboSH6AQd0BhWM5USgq1YXvurC834SMcw8zQhYLikzikhwk"
 
 def send_discord_message(content):
-    if not WEBHOOK_URL or WEBHOOK_URL == "https://discord.com/api/webhooks/1500467614869094431/jfb5ebL6sMKpXf5BJgSt0VboSH6AQd0BhWM5USgq1YXvurC834SMcw8zQhYLikzikhwk":
+    if not WEBHOOK_URL:
         return
     
     data = json.dumps({"content": content}).encode('utf-8')
-    req = urllib.request.Request(WEBHOOK_URL, data=data, headers={'Content-Type': 'application/json'})
+    headers = {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+    }
+    req = urllib.request.Request(WEBHOOK_URL, data=data, headers=headers)
     try:
         urllib.request.urlopen(req)
     except urllib.error.URLError as e:
         print(f"Erreur Discord: {e}")
-
 
 grid_soft = {
     "algorithm": ["DQN"],
@@ -83,10 +86,10 @@ for i, combo in enumerate(combinations):
             score += reward
             obs = next_obs
         agent.decay_epsilon()
-        scores.append(score)  
+        scores.append(score)
     env.close()
     
-    final_avg_score = sum(scores[-100:]) / min(len(scores[-100:]), 100)   
+    final_avg_score = sum(scores[-100:]) / min(len(scores[-100:]), 100)
     leaderboard.append({"score": final_avg_score, "params": combo})
     leaderboard = sorted(leaderboard, key=lambda x: x["score"], reverse=True)
     is_top_3 = False
