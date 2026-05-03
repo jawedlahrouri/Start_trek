@@ -30,6 +30,7 @@ def send_discord_message(content):
 
 def run_single_test(test_id, total_tests, combo, fixed_hypers):
     torch.set_num_threads(1)
+    os.environ["OMP_NUM_THREADS"] = "1"
     test_number = test_id
     run_name = f"test_{test_number:03d}_{combo['update_type']}_ep{combo['episodes']}_lr{combo['learning_rate']}_batch{combo['batch_size']}"
     print(f"Démarrage Test {test_number}/{total_tests} : [{run_name}]")
@@ -59,7 +60,7 @@ def run_single_test(test_id, total_tests, combo, fixed_hypers):
                 episode_losses.append(loss)      
             score += reward
             obs = next_obs
-            steps += 1
+            steps += 1  
         agent.decay_epsilon()
         scores.append(score)
         writer.add_scalar("Train/1_Score", score, ep)
@@ -70,13 +71,39 @@ def run_single_test(test_id, total_tests, combo, fixed_hypers):
         if episode_losses:
             avg_loss = sum(episode_losses) / len(episode_losses)
             writer.add_scalar("Train/5_Loss", avg_loss, ep)
+    train_score = sum(scores[-100:]) / min(len(scores[-100:]), 100)
+    print(f"[{run_name}] Entraînement terminé (Score: {train_score:.2f}). Évaluation en cours...")
+
+    agent.epsilon = 0.0 
+    evaluation_seeds = [10, 42, 67, 677, 999]
+    all_seeds_scores = []
+    eval_env = gym.make("LunarLander-v3")
+
+    for seed in evaluation_seeds:
+        seed_scores = []
+        for _ in range(100): 
+            obs, _ = eval_env.reset(seed=seed)
+            done = False
+            score = 0
+            while not done:
+                action = agent.select_action(obs, current_episode=None) 
+                next_obs, reward, terminated, truncated, _ = eval_env.step(action)
+                done = terminated or truncated
+                score += reward
+                obs = next_obs
+            seed_scores.append(score)
+        avg_for_this_seed = sum(seed_scores) / len(seed_scores)
+        all_seeds_scores.append(avg_for_this_seed)
+        writer.add_scalar(f"Eval/Score_Moyen_Seed_{seed}", avg_for_this_seed, 0)
     env.close()
+    eval_env.close()
     writer.close()
-    final_avg_score = sum(scores[-100:]) / min(len(scores[-100:]), 100)
-    print(f"Fin du test {test_number}. Score: {final_avg_score:.2f}")
+    grand_mean_score = sum(all_seeds_scores) / len(all_seeds_scores)
+    print(f"Fin du test {test_number}. Évaluation : {grand_mean_score:.2f}")
     return {
         "test_id": test_id,
-        "score": final_avg_score,
+        "score": grand_mean_score,
+        "train_score": train_score,
         "run_name": run_name,
         "params": combo
     }
@@ -118,25 +145,26 @@ if __name__ == "__main__":
     leaderboard = []
     send_discord_message(f"**DÉMARRAGE DU GRID SEARCH PARALLÉLISÉ SUR LE VPS**\n"
                          f"**{total_tests} combinaisons** à tester. On se revoit dans quelques jours !")
-    max_workers = 4 
+    max_workers = 6
     with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
         futures = {executor.submit(run_single_test, i+1, total_tests, combo, fixed_hypers): combo for i, combo in enumerate(combinations)}
         for future in concurrent.futures.as_completed(futures):
             try:
                 result = future.result()
                 test_number = result["test_id"]
-                final_avg_score = result["score"]
+                eval_score = result["score"]
+                train_score = result["train_score"]
                 run_name = result["run_name"]
                 combo = result["params"]
-                leaderboard.append({"score": final_avg_score, "run_name": run_name, "params": combo})
+                leaderboard.append(result)
                 leaderboard = sorted(leaderboard, key=lambda x: x["score"], reverse=True)
                 os.makedirs("runs/grid_search/DQN", exist_ok=True)
                 with open("runs/grid_search/DQN/leaderboard_progressif.json", "w") as f:
-                    json.dump(leaderboard, f, indent=4)
+                    json.dump(leaderboard, f, indent=4) 
                 is_top_3 = False
                 is_top_1 = False
                 for rank, entry in enumerate(leaderboard[:3]):
-                    if entry["params"] == combo:
+                    if entry["run_name"] == run_name:
                         is_top_3 = True
                         if rank == 0:
                             is_top_1 = True
@@ -146,16 +174,16 @@ if __name__ == "__main__":
                 if is_top_1:
                     msg = (f"🚨 🏆 **NOUVEAU LEADER ABSOLU (TOP 1) !** 🏆 🚨\n"
                            f"**Avancement:** {len(leaderboard)}/{total_tests}\n"
-                           f"**Score Moyen:** `{final_avg_score:.2f} pts` 🚀\n"
+                           f"**Évaluation Officielle:** `{eval_score:.2f} pts` 🚀 *(Train: {train_score:.2f})*\n"
                            f"**Configuration :**\n{param_str}")
                 elif is_top_3:
                     msg = (f"🌟 **NOUVELLE ENTRÉE DANS LE TOP 3 !** 🌟\n"
                            f"**Avancement:** {len(leaderboard)}/{total_tests}\n"
-                           f"**Score Moyen:** `{final_avg_score:.2f} pts`\n"
+                           f"**Évaluation Officielle:** `{eval_score:.2f} pts` *(Train: {train_score:.2f})*\n"
                            f"**Configuration :**\n{param_str}")
                 else:
                     msg = (f"⚙️ Test {test_number} terminé ({len(leaderboard)}/{total_tests}).\n"
-                           f"**Algo:** `{combo['algorithm']}` | **Score:** `{final_avg_score:.2f} pts`\n"
+                           f"**Algo:** `{combo['algorithm']}` | **Score Éval:** `{eval_score:.2f} pts` *(Train: {train_score:.2f})*\n"
                            f"(Pas de changement au sommet).")
 
                 send_discord_message(msg)
