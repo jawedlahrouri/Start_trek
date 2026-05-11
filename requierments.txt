@@ -3,3 +3,5 @@ gymnasium[box2d]
 torch
 pyyaml
 tensorboard
+
+matplotlib
