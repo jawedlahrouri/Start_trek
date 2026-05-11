@@ -1,7 +1,19 @@
+#!/usr/bin/env python3
 import gymnasium as gym
+import sys
+from src.config_loader import load_config
 
-env = gym.make("LunarLander-v3", render_mode="human")
-obs, info = env.reset(seed=42)
+if len(sys.argv) > 1:
+    config_path = sys.argv[1]
+else:
+    config_path = "configs/default_config.yaml"
+
+config = load_config(config_path)
+env_config = config.get("environment", {})
+seeds = config.get("seeds", {})
+
+env = gym.make(env_config.get("name"), render_mode=env_config.get("render_mode"))
+obs, info = env.reset(seed=seeds.get("eval"))
 
 while True:
     action = env.action_space.sample()

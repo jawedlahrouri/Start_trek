@@ -1,33 +1,56 @@
+#!/usr/bin/env python3
 import gymnasium as gym
 import torch
 import torch.optim as optim
 import random
-from src.agent import QNetwork, ReplayBuffer, train_step
 from torch.utils.tensorboard import SummaryWriter
+import sys
+from src.agent import QNetwork, ReplayBuffer, train_step
+from src.config_loader import load_config
 
-writer = SummaryWriter(log_dir="runs/lunar_lander_v2") 
+if len(sys.argv) > 1:
+    config_path = sys.argv[1]
+else:
+    config_path = "configs/default_config.yaml"
 
-env = gym.make("LunarLander-v3", render_mode="human")
+config = load_config(config_path)
+env_config = config.get("environment", {})
+algo_config = config.get("algorithm", {})
+hypers = config.get("hyperparameters", {})
+seeds = config.get("seeds", {})
+train_config = config.get("training", {})
+
+# Setup environment
+env = gym.make(env_config.get("name"), render_mode=env_config.get("render_mode"))
 state_size = env.observation_space.shape[0]
 action_size = env.action_space.n
 
-q_net = QNetwork(state_size, action_size)
-target_net = QNetwork(state_size, action_size)
+# Setup networks
+q_net = QNetwork(state_size, action_size, **hypers)
+target_net = QNetwork(state_size, action_size, **hypers)
 target_net.load_state_dict(q_net.state_dict())
 
-optimizer = optim.Adam(q_net.parameters(), lr=1e-3)
-memory = ReplayBuffer(capacity=30000)
+# Setup optimizer and memory
+optimizer = optim.Adam(q_net.parameters(), lr=hypers.get("learning_rate"))
+memory = ReplayBuffer(capacity=hypers.get("buffer_capacity"))
 
-TAU = 1e-3
-batch_size = 64
-episodes = 800
-epsilon = 1.0
-epsilon_decay = 0.995
-epsilon_min = 0.01
+# Tensorboard
+writer = SummaryWriter(log_dir=algo_config.get("log_dir"))
+
+# Training parameters
+episodes = train_config.get("episodes")
+batch_size = hypers.get("batch_size")
+gamma = hypers.get("gamma")
+tau = hypers.get("tau")
+epsilon = hypers.get("epsilon_start")
+epsilon_decay = hypers.get("epsilon_decay")
+epsilon_min = hypers.get("epsilon_min")
+seed = seeds.get("train")
+
 scores = []
 
 for ep in range(episodes):
-    obs, info = env.reset()
+    obs, info = env.reset(seed=seed if ep == 0 else None)
     done = False
     score = 0
     steps = 0 
@@ -48,12 +71,12 @@ for ep in range(episodes):
         
         if len(memory) > batch_size:
             states, actions, rewards, next_states, dones = memory.sample(batch_size)
-            loss = train_step(q_net, target_net, optimizer, states, actions, rewards, next_states, dones)
+            loss = train_step(q_net, target_net, optimizer, states, actions, rewards, next_states, dones, gamma=gamma)
             
             episode_losses.append(loss)
             
             for target_param, local_param in zip(target_net.parameters(), q_net.parameters()):
-                target_param.data.copy_(TAU * local_param.data + (1.0 - TAU) * target_param.data)
+                target_param.data.copy_(tau * local_param.data + (1.0 - tau) * target_param.data)
         
         score += reward
         obs = next_obs
@@ -86,5 +109,7 @@ for ep in range(episodes):
 
 writer.close() 
 env.close()
-torch.save(q_net.state_dict(), "lunar_lander_model.pth")
-print("Modèle sauvegardé avec succès !")
+
+save_path = algo_config.get("save_path")
+torch.save(q_net.state_dict(), save_path)
+print(f"Modèle sauvegardé avec succès dans {save_path} !")

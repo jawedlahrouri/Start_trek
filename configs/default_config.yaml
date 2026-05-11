@@ -1,0 +1,26 @@
+environment:
+  name: "LunarLander-v3"
+  render_mode: "human"
+
+algorithm:
+  name: "DQN"
+  log_dir: "runs/lunar_lander_v2"
+  save_path: "lunar_lander_model.pth"
+
+hyperparameters:
+  learning_rate: 1.0e-3
+  gamma: 0.99
+  tau: 1.0e-3
+  batch_size: 64
+  buffer_capacity: 30000
+  hidden_size: 64
+  epsilon_start: 1.0
+  epsilon_decay: 0.995
+  epsilon_min: 0.01
+
+seeds:
+  train: 67
+  eval: 42
+
+training:
+  episodes: 800

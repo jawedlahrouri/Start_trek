@@ -2,3 +2,4 @@ venv/
 src/__pycache__/
 lunar_lander_model.pth
 runs/
+*.pth

@@ -6,7 +6,7 @@ import random
 from collections import deque
 
 class QNetwork(nn.Module):
-    def __init__(self, state_list=8, action_list=4, hidden_size=64):
+    def __init__(self, state_list, action_list, hidden_size=64, **kwargs):
         super(QNetwork, self).__init__()
         self.fc1 = nn.Linear(state_list, hidden_size)
         self.fc2 = nn.Linear(hidden_size, hidden_size)

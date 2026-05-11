@@ -1,0 +1,25 @@
+environment:
+  name: "LunarLander-v3"
+
+algorithm:
+  name: "DQN-Fast"
+  log_dir: "runs/exp_fast"
+  save_path: "exp_fast_model.pth"
+
+hyperparameters:
+  learning_rate: 2.0e-3
+  gamma: 0.95
+  tau: 5.0e-3
+  batch_size: 128
+  buffer_capacity: 10000
+  hidden_size: 32
+  epsilon_start: 0.5
+  epsilon_decay: 0.9
+  epsilon_min: 0.05
+
+seeds:
+  train: 123
+  eval: 456
+
+training:
+  episodes: 100
