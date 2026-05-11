@@ -4,6 +4,7 @@ import sys
 from torch.utils.tensorboard import SummaryWriter
 from src.config_loader import load_config
 from src.agents.dqn_agent import DQNAgent
+from src.agents.doubledqn_agent import DoubleDQNAgent
 
 if len(sys.argv) > 1:
     config_path = sys.argv[1]
@@ -20,8 +21,10 @@ state_size = env.observation_space.shape[0]
 action_size = env.action_space.n
 
 algo_name = algo_config.get("name")
-if algo_name == "DQN" or algo_name == "DQN-Fast":
+if algo_name == "DQN":
     agent = DQNAgent(state_size, action_size, hypers)
+elif algo_name == "DoubleDQN":
+    agent = DoubleDQNAgent(state_size, action_size, hypers)
 else:
     raise ValueError(f"Algorithme {algo_name} non supporté.")
 
