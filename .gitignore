@@ -1,5 +1,22 @@
+# Cache Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Dossiers d'environnements virtuels (très important aussi !)
+venv/
+env/
+
+# Dossier des modèles sauvegardés (pour ne pas push des fichiers de 500Mo)
+assets/agents_save/
+*.pth
+
+# Dossier Tensorboard (qui va vite devenir énorme)
+runs/
 venv/
 src/__pycache__/
+src/agents/__pycache__/
 lunar_lander_model.pth
 runs/
 *.pth

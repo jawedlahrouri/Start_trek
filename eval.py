@@ -21,5 +21,3 @@ while True:
 
     if terminated or truncated:
         obs, info = env.reset()
-        
-# fichier ou on mettra l'evalutation de notre agent, pour l'instant on utilise des actions aléatoires pour tester l'environnement et voir si tout fonctionne correctement.#
