@@ -14,7 +14,7 @@ config = load_config(config_path)
 env_config = config.get("environment", {})
 algo_config = config.get("algorithm", {})
 hypers = config.get("hyperparameters", {})
-seeds = config.get("seeds", {})
+seeds_config = config.get("seeds", {})
 train_config = config.get("training", {})
 env = gym.make(env_config.get("name"), render_mode=env_config.get("render_mode"))
 state_size = env.observation_space.shape[0]
@@ -30,11 +30,14 @@ else:
 
 writer = SummaryWriter(log_dir=algo_config.get("log_dir"))
 episodes = train_config.get("episodes")
-seed = seeds.get("train")
+train_seeds = seeds_config.get("train", [None])
+if not isinstance(train_seeds, list):
+    train_seeds = [train_seeds]
 scores = []
 
 for ep in range(episodes):
-    obs, info = env.reset(seed=seed if ep == 0 else None)
+    current_seed = train_seeds[ep % len(train_seeds)]
+    obs, info = env.reset(seed=current_seed)
     done = False
     score = 0
     steps = 0 
@@ -58,7 +61,7 @@ for ep in range(episodes):
         elif reward < -50: cause = "crash"
         else: cause = "safe-landing"
     scores.append(score)
-    score_avg = sum(scores[-100:]) / len(scores[-100:])
+    score_avg = sum(scores[-100:]) / min(len(scores[-100:]), 100) 
     logs = agent.get_logs()
 
     writer.add_scalar("Score/Episode", score, ep)
@@ -68,8 +71,7 @@ for ep in range(episodes):
         writer.add_scalar(f"Stats/{key.capitalize()}", val, ep)
     writer.add_scalar("Cause/Crash", 1 if cause == "crash" else 0, ep)
     writer.add_scalar("Cause/Safe_landing", 1 if cause == "safe-landing" else 0, ep)
-
-    print(f"Ep {ep} | Score: {score:>7.2f} | Moy(100): {score_avg:>7.2f} | Fin: {cause}")
+    print(f"Ep {ep} | Seed: {str(current_seed):>4} | Score: {score:>7.2f} | Moy(100): {score_avg:>7.2f} | Fin: {cause}")
 
 writer.close() 
 env.close()
@@ -80,4 +82,4 @@ save_dir = "assets/agents_save"
 os.makedirs(save_dir, exist_ok=True)
 final_save_path = os.path.join(save_dir, os.path.basename(save_filename))
 agent.save(final_save_path)
-print(f"Modèle sauvegardé avec succès")
+print(f"Modèle sauvegardé avec succès dans {final_save_path}")
