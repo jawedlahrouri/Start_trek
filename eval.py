@@ -33,10 +33,6 @@ def main():
         print(f"Error: Model weights not found at {model_path} (check 'save_path' in config)")
         sys.exit(1)
 
-<<<<<<< Updated upstream
-    if terminated or truncated:
-        obs, info = env.reset()
-=======
     print(f"Using config: {config_path}")
     print(f"Loading model: {model_path}")
 
@@ -100,4 +96,3 @@ def main():
 
 if __name__ == "__main__":
     main()
->>>>>>> Stashed changes
