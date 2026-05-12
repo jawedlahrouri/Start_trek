@@ -1,0 +1,26 @@
+environment:
+  name: "LunarLander-v3"
+  render_mode: null
+
+algorithm:
+  name: "DoubleDQN"
+  log_dir: "runs/ultimate_stability_v1"
+  save_path: "ultimate_model.pth"
+
+hyperparameters:
+  learning_rate: 0.00075
+  batch_size: 64
+  hidden_size: 64
+  epsilon_decay: 0.99
+  update_type: "soft"
+  tau: 0.001 
+  gamma: 0.99
+  buffer_capacity: 30000
+  epsilon_start: 1.0
+  epsilon_min: 0.01
+
+training:
+  episodes: 400
+
+seeds:
+  train: [10, 11, 12, 13, 14]
