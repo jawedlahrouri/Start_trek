@@ -27,7 +27,6 @@ def main():
     hypers = config.get("hyperparameters", {})
     seeds = config.get("seeds", {})
 
-    # Get model path from config
     model_path = algo_config.get("save_path")
     if not model_path or not os.path.exists(model_path):
         print(f"Error: Model weights not found at {model_path} (check 'save_path' in config)")
@@ -36,7 +35,6 @@ def main():
     print(f"Using config: {config_path}")
     print(f"Loading model: {model_path}")
 
-    # Create environment
     env_name = env_config.get("name", "LunarLander-v3")
     env = gym.make(
         env_name,
