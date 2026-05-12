@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import gymnasium as gym
 import sys
+import os
+from src.agents.dqn_agent import QNetwork
 from src.config_loader import load_config
 
 if len(sys.argv) > 1:
