@@ -3,7 +3,7 @@ import gymnasium as gym
 import torch
 import sys
 import os
-from src.agent import QNetwork
+from src.agents.dqn_agent import QNetwork
 from src.config_loader import load_config
 
 GRAVITY = -10.0
