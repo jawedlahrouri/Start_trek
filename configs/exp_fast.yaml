@@ -1,5 +1,9 @@
 environment:
   name: "LunarLander-v3"
+  gravity: -10.0
+  enable_wind: True
+  wind_power: 15.0
+  turbulence_power: 1.5
 
 algorithm:
   name: "DQN"
@@ -19,7 +23,7 @@ hyperparameters:
 
 seeds:
   train: 123
-  eval: 456
+  eval: [456, 67, 69]
 
 training:
   episodes: 100
