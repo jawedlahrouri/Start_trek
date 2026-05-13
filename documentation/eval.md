@@ -44,5 +44,5 @@ The script follows a clear, step-by-step process:
 - `eval.py` is the central tool for objectively measuring the performance of your RL agents.
 - It ensures **reproducibility** through the use of multiple seeds and systematic data logging.
 - It provides a **comprehensive report** (CSV, videos, console stats) to facilitate the analysis and comparison of different models.
-- Usage is straightforward: `python eval.py <path_to_config.yaml>`.
+- Usage is: `python eval.py <path_to_config.yaml>`.
 - The script is easily extensible to support other algorithms or environments.
