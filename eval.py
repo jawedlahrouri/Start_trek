@@ -181,6 +181,7 @@ def main():
     total_causes = {"sleep": 0, "out-of-view": 0, "crash": 0, "safe-landing": 0, "unknown": 0}
     all_scores = []
     all_steps = []
+    seed_means = {}
 
     eval_seeds = seeds.get("eval", [10, 20, 30, 40, 50])
     if isinstance(eval_seeds, int):
@@ -212,6 +213,7 @@ def main():
                 print(f"Seed {seed} | Ep {ep} | Score: {score:>7.2f} | Moy(seed): {score_avg:>7.2f} | Fin: {cause}")
 
             s_mean, s_std, s_ci = calculate_stats(seed_scores)
+            seed_means[seed] = s_mean
             print(f"\nStats for Seed {seed}:")
             print(f"  - Average Score: {s_mean:.2f}")
             print(f"  - Std Deviation: {s_std:.2f}")
@@ -232,6 +234,10 @@ def main():
             print(f"Overall 95% CI      : ±{final_ci:.2f}")
             print(f"Avg Episode Length  : {avg_steps:.1f} steps")
             print(f"Success Rate        : {success_rate:.1f}%")
+            print("-" * 20)
+            print("Means by Seed:")
+            for s, s_mean in seed_means.items():
+                print(f"  - Seed {s:<4}: {s_mean:.2f}")
             print("-" * 20)
             
             print_text_histogram(all_scores)
