@@ -2,7 +2,7 @@ environment:
   name: "LunarLander-v3"
 
 algorithm:
-  name: "DQN-Fast"
+  name: "DQN"
   log_dir: "runs/exp_fast"
   save_path: "exp_fast_model.pth"
 
