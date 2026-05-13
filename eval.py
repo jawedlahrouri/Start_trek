@@ -143,7 +143,7 @@ def load_eval_model(algo_config, env_config, hypers):
         env.close()
         hidden_size = hypers.get("hidden_size", 64)
         algo_name = algo_config.get("name")
-        
+
         if "DQN" in algo_name:
             model = QNetwork(state_size, action_size, hidden_size=hidden_size)
         elif "DoubleDQN" in algo_name:
@@ -246,7 +246,7 @@ def print_final_summary(all_scores, all_steps, total_causes, seed_means, results
             print(f"  - Seed {s:<4}: {s_mean:.2f}")
         print("-" * 20)
         
-        print_text_histogram(all_scores)
+        print_hist(all_scores)
         
         print("-" * 20)
         print("Termination Reasons:")
