@@ -14,8 +14,7 @@ hyperparameters:
   buffer_capacity: 30000
   epsilon_decay: 0.2
   ppo_epochs: 4
-  state_size: 64
-  action_size: 64
+  hidden_size: 64
 
 seeds:
   train: 67

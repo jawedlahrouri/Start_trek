@@ -10,17 +10,16 @@ class PPOAgent:
         self.gamma = hypers.get("gamma") 
         self.clip_ratio = hypers.get("epsilon_decay") 
         self.ppo_epochs = hypers.get("ppo_epochs") 
-        
         lr = hypers.get("learning_rate") 
+        hidden_size = hypers.get("hidden_size", 64) 
 
         self.actor = nn.Sequential(
-            nn.Linear(state_size, 64), nn.Tanh(),
-            nn.Linear(64, action_size), nn.Softmax(dim=-1)
+            nn.Linear(state_size, hidden_size), nn.Tanh(),
+            nn.Linear(hidden_size, action_size), nn.Softmax(dim=-1)
         )
-
         self.critic = nn.Sequential(
-            nn.Linear(state_size, 64), nn.Tanh(),
-            nn.Linear(64, 1)
+            nn.Linear(state_size, hidden_size), nn.Tanh(),
+            nn.Linear(hidden_size, 1)
         )
         
         self.optimizer_actor = torch.optim.Adam(self.actor.parameters(), lr=lr) 
