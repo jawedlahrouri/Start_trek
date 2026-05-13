@@ -5,6 +5,7 @@ from torch.utils.tensorboard import SummaryWriter
 from src.config_loader import load_config
 from src.agents.dqn_agent import DQNAgent
 from src.agents.doubledqn_agent import DoubleDQNAgent
+from src.agents.ppo_agent import PPOAgent
 
 if len(sys.argv) > 1:
     config_path = sys.argv[1]
@@ -25,6 +26,8 @@ if algo_name == "DQN":
     agent = DQNAgent(state_size, action_size, hypers)
 elif algo_name == "DoubleDQN":
     agent = DoubleDQNAgent(state_size, action_size, hypers)
+elif algo_name == "PPO":
+    agent = PPOAgent(state_size, action_size, hypers)
 else:
     raise ValueError(f"Algorithme {algo_name} non supporté.")
 
