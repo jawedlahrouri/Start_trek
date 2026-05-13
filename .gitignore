@@ -20,3 +20,6 @@ src/agents/__pycache__/
 lunar_lander_model.pth
 runs/
 *.pth
+*.venv*
+*.log
+*eval_output/*
