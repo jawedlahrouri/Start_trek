@@ -32,26 +32,31 @@ def get_env(env_config, video_folder=None):
     """Creates and configures the environment."""
     try:
         env_name = env_config.get("name", "LunarLander-v3") # sets the environment name with a default fallback
-        gravity = env_config.get("gravity", -10.0) # gets the gravity value
-        enable_wind = env_config.get("enable_wind", True) # enables or disables wind in the simulation
-        wind_power = env_config.get("wind_power", 15.0) # sets the strength of the wind
-        turbulence_power = env_config.get("turbulence_power", 1.5) # sets the turbulence intensity
+        gravity = env_config.get("gravity")
+        enable_wind = env_config.get("enable_wind")
+        wind_power = env_config.get("wind_power")
+        turbulence_power = env_config.get("turbulence_power")
         
-        if "render_mode" in env_config:
-            render_mode = env_config["render_mode"] # sets how the environment will be rendered
-            if video_folder:
-                render_mode = "rgb_array" # forces rgb_array rendering if we want to record a video
-        else:
-            render_mode = None
-        
-        env = gym.make( # initializes the gymnasium environment with our custom parameters
-            env_name,
-            gravity=gravity,
-            enable_wind=enable_wind,
-            wind_power=wind_power,
-            turbulence_power=turbulence_power,
-            render_mode=render_mode
-        )
+        render_mode = env_config.get("render_mode")
+        if video_folder:
+            render_mode = "rgb_array"
+            
+        env_params = {
+            "gravity": gravity,
+            "enable_wind": enable_wind,
+            "wind_power": wind_power,
+            "turbulence_power": turbulence_power,
+            "render_mode": render_mode
+        }
+        # Only keep parameters that are not None
+        env_kwargs = {k: v for k, v in env_params.items() if v is not None}
+        env = gym.make(env_name, **env_kwargs)
+
+        print("ENVIRONMENT SETTINGS:")
+        print(f"- Gravity: {gravity}")
+        print(f"- Enable wind: {enable_wind}")
+        print(f"- Wind power: {wind_power}")
+        print(f"- Turbulence power: {turbulence_power}")
         if video_folder:
             env = RecordVideo(env, video_folder, episode_trigger=lambda x: True, disable_logger=True) # wraps the environment to record every episode
         return env # returns the ready-to-use environment
