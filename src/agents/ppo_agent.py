@@ -3,12 +3,15 @@ import torch.nn as nn
 import torch.optim as optim
 import gymnasium as gym
 from torch.distributions import Categorical
+import numpy as np
 
 class PPOAgent:
     def __init__(self, state_size, action_size, hypers):
-        self.gamma = hypers.get("gamma", 0.99) # ajustement des valeur douce afin d'eviter les valeurs aberrantes
-        self.clip_ratio = hypers.get("clip_ratio", 0.2) # permet de donner le ratio pour le calcul du loss de l'actor network (epsilone)
-        self.ppo_epochs = hypers.get("ppo_epochs", 4) # definie le nombre de fois auquel les données stocké dans le batch peuvent etre consulter
+        self.gamma = hypers.get("gamma") 
+        self.clip_ratio = hypers.get("epsilon_decay") 
+        self.ppo_epochs = hypers.get("ppo_epochs") 
+        
+        lr = hypers.get("learning_rate") 
 
         self.actor = nn.Sequential(
             nn.Linear(state_size, 64), nn.Tanh(),
@@ -20,9 +23,22 @@ class PPOAgent:
             nn.Linear(64, 1)
         )
         
-        self.optimizer_actor = torch.optim.Adam(self.actor.parameters(), lr=3e-4) # prepare le bacpropagation
-        self.optimizer_critic = torch.optim.Adam(self.critic.parameters(), lr=1e-3)
+        self.optimizer_actor = torch.optim.Adam(self.actor.parameters(), lr=lr) 
+        self.optimizer_critic = torch.optim.Adam(self.critic.parameters(), lr=lr)
         self.memory = []
+
+    def extract_memory_to_tensors(self):
+        # On utilise np.array() pour fusionner les données AVANT de les donner à PyTorch
+        states = torch.FloatTensor(np.array([m[0] for m in self.memory]))
+        actions = torch.LongTensor(np.array([m[1] for m in self.memory]))
+        log_probs = torch.FloatTensor(np.array([m[2] for m in self.memory]))
+        rewards = torch.FloatTensor(np.array([m[3] for m in self.memory]))
+        values = torch.FloatTensor(np.array([m[4] for m in self.memory]))
+        dones = torch.FloatTensor(np.array([m[5] for m in self.memory]))
+        
+        return states, actions, log_probs, rewards, values, dones
+        
+        return states, actions, log_probs, rewards, values, dones
 
     def select_action(self, state):
         state = torch.FloatTensor(state).unsqueeze(0) # transforme les donner de l'env en données comprehensible pour torch
@@ -41,6 +57,23 @@ class PPOAgent:
         
     def clear_memory(self):
         self.memory = []
+
+    def compute_advantages(self, rewards, values, dones, next_state):
+        next_state_tensor = torch.FloatTensor(next_state).unsqueeze(0)
+        with torch.no_grad():
+            next_value = self.critic(next_state_tensor).item()
+            
+        returns = []
+        R = next_value
+        for step in reversed(range(len(rewards))):
+            R = rewards[step] + self.gamma * R * (1.0 - dones[step])
+            returns.insert(0, R)
+            
+        returns = torch.FloatTensor(returns)
+        advantages = returns - values
+        advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+        
+        return returns, advantages
     
     def update(self, next_state):
         states, actions, old_log_probs, rewards, values, dones = self.extract_memory_to_tensors() # reprend les valeurs dans le bon type
@@ -69,3 +102,16 @@ class PPOAgent:
             self.optimizer_critic.step()
 
         self.clear_memory()
+
+    def save(self, filename):
+        # Sauvegarde les deux cerveaux (Acteur et Critique)
+        torch.save({
+            'actor_state_dict': self.actor.state_dict(),
+            'critic_state_dict': self.critic.state_dict(),
+        }, filename)
+
+    def load(self, filename):
+        # Charge une sauvegarde précédente
+        checkpoint = torch.load(filename)
+        self.actor.load_state_dict(checkpoint['actor_state_dict'])
+        self.critic.load_state_dict(checkpoint['critic_state_dict'])
