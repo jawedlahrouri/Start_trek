@@ -25,6 +25,8 @@ class PPOAgent:
         self.optimizer_actor = torch.optim.Adam(self.actor.parameters(), lr=lr) 
         self.optimizer_critic = torch.optim.Adam(self.critic.parameters(), lr=lr)
         self.memory = []
+        self.last_actor_loss = 0.0
+        self.last_critic_loss = 0.0
 
     def extract_memory_to_tensors(self):
         # On utilise np.array() pour fusionner les données AVANT de les donner à PyTorch
@@ -34,8 +36,6 @@ class PPOAgent:
         rewards = torch.FloatTensor(np.array([m[3] for m in self.memory]))
         values = torch.FloatTensor(np.array([m[4] for m in self.memory]))
         dones = torch.FloatTensor(np.array([m[5] for m in self.memory]))
-        
-        return states, actions, log_probs, rewards, values, dones
         
         return states, actions, log_probs, rewards, values, dones
 
@@ -91,6 +91,8 @@ class PPOAgent:
             #calcule des loss
             actor_loss = -torch.min(surr1, surr2).mean() # mis en neg car on cherche a avoir un gradient ascendant afin de garantir la recherche du meilleur score 
             critic_loss = nn.MSELoss()(current_values, returns)
+            self.last_actor_loss = actor_loss.item()
+            self.last_critic_loss = critic_loss.item()
             
             self.optimizer_actor.zero_grad() # vas clean les enciens poids pour laisser place aux nouveau
             actor_loss.backward() # backpropagation sur l'actor network
@@ -114,3 +116,6 @@ class PPOAgent:
         checkpoint = torch.load(filename)
         self.actor.load_state_dict(checkpoint['actor_state_dict'])
         self.critic.load_state_dict(checkpoint['critic_state_dict'])
+
+    def get_logs(self):
+        return {"actor_loss": self.last_actor_loss, "critic_loss": self.last_critic_loss}
