@@ -277,9 +277,12 @@ if __name__ == "__main__":
                            f"**Avancement:** {tests_completed}/{total_tests} (ETA: ⏳ `{eta_formatted}`)\n"
                            f"**Score Éval:** `{result['eval_score_mean']:.2f} pts` | Valid: `{result['is_valid']}`\n"
                            f"**Configuration :**\n{param_str}")
-
-                if is_top_1 or is_top_3:
-                    send_discord_message(msg)
+                else:
+                    msg = (f"✅ Test {test_number} terminé.\n"
+                           f"**Avancement:** {tests_completed}/{total_tests} (ETA: ⏳ `{eta_formatted}`)\n"
+                           f"**Score Éval:** `{result['eval_score_mean']:.2f} pts` | Valid: `{result['is_valid']}`\n"
+                           f"**Configuration :**\n{param_str}")
+                send_discord_message(msg)
                     
             except Exception as e:
                 print(f"Erreur critique sur un worker : {e}")
