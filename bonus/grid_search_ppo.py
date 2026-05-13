@@ -198,12 +198,12 @@ def run_single_test(test_id, total_tests, combo, fixed_hypers):
 
 grid_ppo = {
     "algorithm": ["PPO"],
-    "episodes": [7500, 10000, 12500, 15000],
+    "episodes": [7500, 10000, 12500],
     "learning_rate": [3e-4, 5e-4, 3.0e-4],
     "update_timestep": [1024, 2048, 4096],
     "ppo_epochs": [4, 10],
-    "epsilon_decay": [0.2, 0.08, 0.35, 0.5],
-    "hidden_size": [32, 64, 128]
+    "epsilon_decay": [0.2, 0.08, 0.35],
+    "hidden_size": [64, 128]
 }
 
 fixed_hypers = {"gamma": 0.99}
