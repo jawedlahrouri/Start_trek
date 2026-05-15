@@ -36,38 +36,39 @@ Hyperparamètre     |    Valeurs testées (Soft Update)              |     Valeu
 -------------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------------
 
-Episodes           |  "400, 500, 600, 800, 1000, 1200, 1500"       |  "400, 500, 600, 800, 1000, 1200, 1500"
+Episodes           |    "400, 500, 600, 800, 1000, 1200, 1500"     |  "400, 500, 600, 800, 1000, 1200, 1500"
 -------------------------------------------------------------------------------------------------------------
-Learning Rate      |        "1e-3, 7.5e-4, 5e-4"                   |                "1e-3, 5e-4"
+Learning Rate      |            "1e-3, 7.5e-4, 5e-4"               |                "1e-3, 5e-4"
 -------------------------------------------------------------------------------------------------------------
-Batch Size         |              "64, 128"                        |                 "64, 128"
+Batch Size         |                 "64, 128"                     |                 "64, 128"
 -------------------------------------------------------------------------------------------------------------
-Hidden Size        |           "64, 128, 256"                      |                "64, 128"
+Hidden Size        |               "64, 128, 256"                  |                "64, 128"
 -------------------------------------------------------------------------------------------------------------
-Buffer Capacity    |   "10 000, 30 000, 50 000, 100 000"           |        "10 000, 30 000, 50 000"
+Buffer Capacity    |       "10 000, 30 000, 50 000, 100 000"       |        "10 000, 30 000, 50 000"
 -------------------------------------------------------------------------------------------------------------
-Epsilon Decay      |             "0.99, 0.985"                     |              "0.995, 0.99"
+Epsilon Decay      |                "0.99, 0.985"                  |              "0.995, 0.99"
 -------------------------------------------------------------------------------------------------------------
-Tau (τ)            |          "1e-3, 3e-3, 5e-3"                   |              Non applicable
+Tau (τ)            |               "1e-3, 3e-3, 5e-3"              |              Non applicable
 -------------------------------------------------------------------------------------------------------------
-Target Update Frequency      |     Non applicable                  |            "100, 200, 500, 1000"
+Target Update      |                 Non applicable                |           "100, 200, 500, 1000"
+Frequency          |                                               |
 -------------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------------
 
-* vous pouvez retrouvez le résultat de tputes ces experimentations dans le dossier "documentation\dqn\grid_search\" dans les fichiers leaderboard_final.json (premier gridsearch) leaderboard_analytics.csv (second gridsearch).
+* vous pouvez retrouvez le résultat de tputes ces experimentations dans le dossier "documentation\dqn\grid_search\" dans les fichiers `leaderboard_final.json` (premier gridsearch) et `leaderboard_analytics.csv` (second gridsearch).
 
 Au final nous avons décidé de garder les hyperparametres suivant car c'est ceux qui nous permettaient de garder la meilleure combinaison entre performance et stabilité tout en s'entrainant rapidement tout.
-Nous avons choisi d'entrainer sur 400 episodes car ce nombre permet d'offrir le meilleur compromis entre temps de calcul et performance de convergence.
+Au final, nous avons décidé de garder les hyperparamètres suivants car ce sont ceux qui nous permettaient d'obtenir le meilleur compromis entre performance, stabilité et temps d'entraînement :
 
 hyperparameters:
-  learning_rate: 0.00075
-  batch_size: 64
-  hidden_size: 64
-  epsilon_decay: 0.99
-  update_type: "soft"
-  tau: 0.001 
-  gamma: 0.99
-  buffer_capacity: 30000
-  epsilon_start: 1.0
-  epsilon_min: 0.01
-  episodes: 400
+- learning_rate: 0.00075
+- batch_size: 64
+- hidden_size: 64
+- epsilon_decay: 0.99
+- update_type: "soft"
+- tau: 0.001 
+- gamma: 0.99
+- buffer_capacity: 30000
+- epsilon_start: 1.0
+- epsilon_min: 0.01
+- episodes: 400
