@@ -32,33 +32,29 @@ Afin de justifier techniquement nos choix architecturaux, une recherche systéma
 d'hyperparamètres (Grid Search) a été exécutée. Cette phase a permis d'identifier et de corriger
 l'overfitting. Tout en cherchant les meilleurs parametres possible pour notre model.
 
-#### Hyperparamètre Valeur Testée:
+Hyperparamètre     |    Valeurs testées (Soft Update)              |     Valeurs testées (Hard Update)
+-------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------
 
-grid_soft = {
-    "algorithm": ["DQN"],
-    "episodes": [400, 500, 600, 800, 1000, 1200, 1500],
-    "update_type": ["soft"],
-    "learning_rate": [1e-3, 7.5e-4, 5e-4],
-    "batch_size": [64, 128],
-    "tau": [1e-3, 3e-3, 5e-3],
-    "target_update_freq": [None],
-    "epsilon_decay": [0.99, 0.985],
-    "buffer_capacity": [30000, 50000, 100000],
-    "hidden_size": [64, 128, 256]
-}
+Episodes           |  "400, 500, 600, 800, 1000, 1200, 1500"       |  "400, 500, 600, 800, 1000, 1200, 1500"
+-------------------------------------------------------------------------------------------------------------
+Learning Rate      |        "1e-3, 7.5e-4, 5e-4"                   |                "1e-3, 5e-4"
+-------------------------------------------------------------------------------------------------------------
+Batch Size         |              "64, 128"                        |                 "64, 128"
+-------------------------------------------------------------------------------------------------------------
+Hidden Size        |           "64, 128, 256"                      |                "64, 128"
+-------------------------------------------------------------------------------------------------------------
+Buffer Capacity    |   "10 000, 30 000, 50 000, 100 000"           |        "10 000, 30 000, 50 000"
+-------------------------------------------------------------------------------------------------------------
+Epsilon Decay      |             "0.99, 0.985"                     |              "0.995, 0.99"
+-------------------------------------------------------------------------------------------------------------
+Tau (τ)            |          "1e-3, 3e-3, 5e-3"                   |              Non applicable
+-------------------------------------------------------------------------------------------------------------
+Target Update Frequency      |     Non applicable                  |            "100, 200, 500, 1000"
+-------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------
 
-grid_hard = {
-    "algorithm": ["DQN"],
-    "episodes": [400, 500, 600, 800, 1000, 1200, 1500],
-    "update_type": ["hard"],
-    "learning_rate": [1e-3, 5e-4],
-    "batch_size": [64, 128],
-    "tau": [None],
-    "target_update_freq": [100, 200, 500, 1000],
-    "epsilon_decay": [0.995, 0.99],
-    "buffer_capacity": [50000],
-    "hidden_size": [64, 128]
-}
+* vous pouvez retrouvez le résultat de tputes ces experimentations dans le dossier "documentation\dqn\grid_search\" dans les fichiers leaderboard_final.json (premier gridsearch) leaderboard_analytics.csv (second gridsearch).
 
 Au final nous avons décidé de garder les hyperparametres suivant car c'est ceux qui nous permettaient de garder la meilleure combinaison entre performance et stabilité tout en s'entrainant rapidement tout.
 Nous avons choisi d'entrainer sur 400 episodes car ce nombre permet d'offrir le meilleur compromis entre temps de calcul et performance de convergence.
