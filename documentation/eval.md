@@ -1,48 +1,43 @@
-# Documentation: How `eval.py` Works
+# Documentation : Comment fonctionne `eval.py`
 
-## Why `eval.py`?
+## Pourquoi `eval.py` ?
 
-The `eval.py` script is designed to evaluate the performance of a trained agent on the LunarLander environment (or any other Gymnasium-compatible environment). Its main purposes are:
+Le script `eval.py` est conçu pour évaluer les performances d'un agent entraîné sur l'environnement LunarLander (ou tout autre environnement compatible avec Gymnasium). Ses principaux objectifs sont :
 
-- **Load a saved model**: It can load weights for various agents like **DQN**, **DoubleDQN**, **PPO**.
-- **Robust Evaluation**: It runs evaluation episodes across multiple seeds to ensure the results are statistically significant and not due to chance.
-- **Detailed Statistics**: It generates key performance metrics, including mean score, standard deviation, and the 95% confidence interval.
-- **Data Logging**: It saves detailed, episode-by-episode results into a CSV file for further analysis.
-- **Visual Analysis**: It records videos of the evaluation episodes, allowing for visual inspection of the agent's behavior.
+- **Charger un modèle sauvegardé** : Il peut charger les poids de divers agents comme **DQN**, **DoubleDQN**, **PPO**.
+- **Évaluation robuste** : Il exécute des épisodes d'évaluation sur plusieurs graines pour garantir que les résultats sont statistiquement significatifs et non dus au hasard.
+- **Statistiques détaillées** : Il génère des métriques de performance clés, notamment le score moyen, l'écart type et l'intervalle de confiance à 95 %.
+- **Enregistrement des données** : Il sauvegarde les résultats détaillés, épisode par épisode, dans un fichier CSV pour une analyse plus approfondie.
+- **Analyse visuelle** : Il enregistre des vidéos des épisodes d'évaluation, permettant une inspection visuelle du comportement de l'agent.
 
-## How does `eval.py` work?
+## Comment fonctionne `eval.py` ?
 
-The script follows a clear, step-by-step process:
+Le script suit un processus clair, étape par étape :
 
-1. **Configuration Loading**:
+1.  **Chargement de la configuration** :
+    -   Le script nécessite un fichier de configuration YAML comme argument de ligne de commande. Ce fichier spécifie l'algorithme, les paramètres de l'environnement, les hyperparamètres et les graines à utiliser pour l'évaluation.
+2.  **Chargement du modèle** :
+    -   Le modèle entraîné est chargé à partir du chemin spécifié dans le fichier de configuration. Un mécanisme de secours est inclus pour rechercher le modèle dans un répertoire par défaut `assets/agents_save/` s'il n'est pas trouvé au chemin principal.
+3.  **Configuration de l'environnement** :
+    -   L'environnement Gymnasium est créé en utilisant les paramètres du fichier de configuration (par exemple, la gravité, le vent).
+    -   Si l'enregistrement vidéo est activé, l'environnement est encapsulé avec `RecordVideo` pour sauvegarder chaque épisode.
+4.  **Boucle d'évaluation** :
+    -   Le script itère sur chaque graine spécifiée. Par défaut, il exécute 100 épisodes par graine.
+    -   Dans chaque épisode :
+        -   L'agent agit de manière gloutonne, choisissant toujours l'action avec la plus grande valeur Q du modèle chargé.
+        -   Les scores, les causes de fin d'épisode (par exemple, `crash`, `atterrissage-réussi`, `hors-champ`) et le nombre de pas sont enregistrés.
+        -   Les résultats de l'épisode sont ajoutés au fichier CSV.
+5.  **Statistiques et résumé** :
+    -   Une fois tous les épisodes terminés, le script calcule et affiche un résumé final.
+    -   Cela inclut des statistiques globales et par graine (moyenne, écart type, IC).
+    -   Un histogramme en mode texte montre la distribution des scores.
+    -   Une répartition des causes de fin et le taux de réussite global sont imprimés.
+    -   Enfin, il rappelle à l'utilisateur où les résultats CSV et les fichiers vidéo ont été sauvegardés.
 
-   - The script requires a YAML configuration file as a command-line argument. This file specifies the algorithm, environment settings, hyperparameters, and the seeds to be used for evaluation.
-2. **Model Loading**:
+## Points clés à retenir
 
-   - The trained model is loaded from the path specified in the configuration file. A fallback mechanism is included to search for the model in a default `assets/agents_save/` directory if it's not found at the primary path.
-3. **Environment Setup**:
-
-   - The Gymnasium environment is created using the parameters from the config file (e.g., gravity, wind).
-   - If video recording is enabled, the environment is wrapped with `RecordVideo` to save each episode.
-4. **Evaluation Loop**:
-
-   - The script iterates through each specified seed. By default, it runs 100 episodes per seed.
-   - In each episode:
-     - The agent acts greedily, always choosing the action with the highest Q-value from the loaded model.
-     - Scores, episode termination causes (e.g., `crash`, `safe-landing`, `out-of-view`), and step counts are recorded.
-     - The results for the episode are appended to the CSV file.
-5. **Statistics and Summary**:
-
-   - After all episodes are completed, the script calculates and displays a final summary.
-   - This includes overall and per-seed statistics (mean, std dev, CI).
-   - A text-based histogram shows the distribution of scores.
-   - A breakdown of termination causes and the overall success rate are printed.
-   - Finally, it reminds the user where the CSV results and video files have been saved.
-
-## Key Takeaways
-
-- `eval.py` is the central tool for objectively measuring the performance of your RL agents.
-- It ensures **reproducibility** through the use of multiple seeds and systematic data logging.
-- It provides a **comprehensive report** (CSV, videos, console stats) to facilitate the analysis and comparison of different models.
-- Usage is: `python eval.py <path_to_config.yaml>`.
-- The script is easily extensible to support other algorithms or environments.
+-   `eval.py` est l'outil central pour mesurer objectivement les performances de vos agents RL.
+-   Il assure la **reproductibilité** grâce à l'utilisation de plusieurs graines et à l'enregistrement systématique des données.
+-   Il fournit un **rapport complet** (CSV, vidéos, statistiques de la console) pour faciliter l'analyse et la comparaison de différents modèles.
+-   Utilisation : `python eval.py <chemin_vers_config.yaml>`.
+-   Le script est facilement extensible pour prendre en charge d'autres algorithmes ou environnements.

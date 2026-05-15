@@ -1,49 +1,49 @@
 #!/bin/bash
 
-# Check if a configuration file path is provided. If not, print usage and exit.
+# Vérifie si un chemin de fichier de configuration est fourni. Sinon, affiche l'utilisation et quitte.
 if [ -z "$1" ]; then
-    echo "Error: No configuration file provided."
-    echo "Usage: ./repro.sh <path_to_config.yaml>"
+    echo "Erreur : Aucun fichier de configuration fourni."
+    echo "Usage: ./repro.sh <chemin_vers_config.yaml>"
     exit 1
 fi
 
-# Check if the provided file exists. If not, print an error and exit.
+# Vérifie si le fichier fourni existe. Sinon, affiche une erreur et quitte.
 if [ ! -f "$1" ]; then
-    echo "Error: Configuration file not found at '$1'"
+    echo "Erreur : Fichier de configuration non trouvé à '$1'"
     exit 1
 fi
 
 CONFIG_FILE=$1
 
-# 2. Run Training
-echo " Starting Training "
-echo "Using configuration file: $CONFIG_FILE"
+# 2. Exécuter l'entraînement
+echo " Début de l'entraînement "
+echo "Utilisation du fichier de configuration : $CONFIG_FILE"
 
-# Execute the training script with the provided config file.
+# Exécute le script d'entraînement avec le fichier de configuration fourni.
 python train.py "$CONFIG_FILE"
 
-# Check the exit code of the training script. If it's not 0, an error occurred.
+# Vérifie le code de sortie du script d'entraînement. S'il n'est pas 0, une erreur s'est produite.
 if [ $? -ne 0 ]; then
-    echo "Training failed. Aborting script. "
+    echo "L'entraînement a échoué. Arrêt du script. "
     exit 1
 fi
 
-echo "Training completed successfully."
+echo "Entraînement terminé avec succès."
 echo ""
 
-# 3. Run Evaluation
-echo "Starting Evaluation"
-echo "Using the same configuration file: $CONFIG_FILE"
+# 3. Exécuter l'évaluation
+echo "Début de l'évaluation"
+echo "Utilisation du même fichier de configuration : $CONFIG_FILE"
 
-# Execute the evaluation script with the same config file.
+# Exécute le script d'évaluation avec le même fichier de configuration.
 python eval.py "$CONFIG_FILE"
 
-# Check the exit code of the evaluation script.
+# Vérifie le code de sortie du script d'évaluation.
 if [ $? -ne 0 ]; then
-    echo "Evaluation failed."
+    echo "L'évaluation a échoué."
     exit 1
 fi
 
-echo "Evaluation completed successfully."
+echo "Évaluation terminée avec succès."
 echo ""
-echo "Reproduction script finished."
+echo "Script de reproduction terminé."

@@ -12,26 +12,26 @@ from src.agents.doubledqn_agent import DoubleDQNAgent
 from src.config_loader import load_config
 
 def calculate_stats(scores):
-    """Calculates mean, standard deviation, and 95% confidence interval."""
+    """Calcule la moyenne, l'écart type et l'intervalle de confiance à 95%."""
     try:
-        if not scores: # returns default values if the list is empty
+        if not scores: # retourne des valeurs par défaut si la liste est vide
             return 0.0, 0.0, 0.0
-        mean = sum(scores) / len(scores) # calculates the average score
+        mean = sum(scores) / len(scores) # calcule le score moyen
         if len(scores) > 1:
-            stdev = statistics.stdev(scores) # calculates the standard deviation to see data spread
-            ci = 1.96 * (stdev / math.sqrt(len(scores))) # calculates the 95% confidence interval for better precision
+            stdev = statistics.stdev(scores) # calcule l'écart type pour voir la dispersion des données
+            ci = 1.96 * (stdev / math.sqrt(len(scores))) # calcule l'intervalle de confiance à 95% pour une meilleure précision
         else:
             stdev = 0.0
             ci = 0.0
-        return mean, stdev, ci # returns the final calculated statistics
+        return mean, stdev, ci # retourne les statistiques finales calculées
     except Exception as e:
-        print(f"Error in calculate_stats: {e}")
+        print(f"Erreur dans calculate_stats: {e}")
         return 0.0, 0.0, 0.0
 
 def get_env(env_config, video_folder=None):
-    """Creates and configures the environment."""
+    """Crée et configure l'environnement."""
     try:
-        env_name = env_config.get("name", "LunarLander-v3") # sets the environment name with a default fallback
+        env_name = env_config.get("name", "LunarLander-v3") # définit le nom de l'environnement avec une valeur par défaut
         gravity = env_config.get("gravity")
         enable_wind = env_config.get("enable_wind")
         wind_power = env_config.get("wind_power")
@@ -48,7 +48,7 @@ def get_env(env_config, video_folder=None):
             "turbulence_power": turbulence_power,
             "render_mode": render_mode
         }
-        # Only keep parameters that are not None
+        # Ne conserve que les paramètres qui ne sont pas None
         env_kwargs = {k: v for k, v in env_params.items() if v is not None}
         env = gym.make(env_name, **env_kwargs)
 
@@ -58,241 +58,241 @@ def get_env(env_config, video_folder=None):
         print(f"- Wind power: {wind_power}")
         print(f"- Turbulence power: {turbulence_power}")
         if video_folder:
-            env = RecordVideo(env, video_folder, episode_trigger=lambda x: True, disable_logger=True) # wraps the environment to record every episode
-        return env # returns the ready-to-use environment
+            env = RecordVideo(env, video_folder, episode_trigger=lambda x: True, disable_logger=True) # encapsule l'environnement pour enregistrer chaque épisode
+        return env # retourne l'environnement prêt à l'emploi
     except Exception as e:
-        print(f"Error in get_env: {e}")
+        print(f"Erreur dans get_env: {e}")
         sys.exit(1)
 
 def run_episode(env, model, seed=None):
-    """Runs a single episode and returns the score and cause of termination."""
+    """Exécute un seul épisode et retourne le score et la cause de la fin."""
     try:
-        obs, info = env.reset(seed=seed) # resets the environment to a fresh state using the seed
+        obs, info = env.reset(seed=seed) # réinitialise l'environnement à un état frais en utilisant la graine
         done = False
         score = 0
         steps = 0
         
         while not done:
-            state_tensor = torch.tensor(obs, dtype=torch.float32).unsqueeze(0) # transforms env data into torch comprehensible data
-            with torch.no_grad(): # disables gradient calculation to save memory and speed up evaluation
-                q_values = model(state_tensor) # gets the q-values for all possible actions from the model
-                action = q_values.argmax().item() # selects the action with the highest q-value
-            obs, reward, terminated, truncated, info = env.step(action) # plays the selected action in the environment
-            score += reward # accumulates the reward to compute the final score
-            done = terminated or truncated # checks if the episode has ended
-            steps += 1 # increments the step counter
-        cause = "unknown"
+            state_tensor = torch.tensor(obs, dtype=torch.float32).unsqueeze(0) # transforme les données de l'environnement en données compréhensibles par torch
+            with torch.no_grad(): # désactive le calcul des gradients pour économiser de la mémoire et accélérer l'évaluation
+                q_values = model(state_tensor) # obtient les valeurs q pour toutes les actions possibles du modèle
+                action = q_values.argmax().item() # sélectionne l'action avec la plus grande valeur q
+            obs, reward, terminated, truncated, info = env.step(action) # joue l'action sélectionnée dans l'environnement
+            score += reward # accumule la récompense pour calculer le score final
+            done = terminated or truncated # vérifie si l'épisode est terminé
+            steps += 1 # incrémente le compteur de pas
+        cause = "inconnue"
         if truncated: 
-            cause = "sleep" # the agent took too long to land
+            cause = "endormi" # l'agent a mis trop de temps à atterrir
         elif terminated:
             if abs(obs[0]) >= 1.0: 
-                cause = "out-of-view" # the agent flew outside the screen boundaries
+                cause = "hors-champ" # l'agent a volé en dehors des limites de l'écran
             elif reward < -50: 
-                cause = "crash" # the agent crashed too hard on the ground
+                cause = "crash" # l'agent s'est écrasé trop fort sur le sol
             else: 
-                cause = "safe-landing" # the agent successfully landed
-        return score, cause, steps # returns the episode results
+                cause = "atterrissage-réussi" # l'agent a réussi à atterrir
+        return score, cause, steps # retourne les résultats de l'épisode
     except Exception as e:
-        print(f"Error in run_episode: {e}")
-        return 0, "error", 0
+        print(f"Erreur dans run_episode: {e}")
+        return 0, "erreur", 0
 
 def print_hist(data, bins=10):
-    """Prints a simple text history of the distribution."""
+    """Affiche un histogramme textuel simple de la distribution."""
     try:
         if not data:
-            return # does nothing if there is no data to plot
-        min_val = min(data) # finds the lowest score
-        max_val = max(data) # finds the highest score
+            return # ne fait rien s'il n'y a pas de données à tracer
+        min_val = min(data) # trouve le score le plus bas
+        max_val = max(data) # trouve le score le plus élevé
         if min_val == max_val:
-            print(f"  All values are exactly {min_val:.2f}")
+            print(f"  Toutes les valeurs sont exactement {min_val:.2f}")
             return
             
-        bin_size = (max_val - min_val) / bins # calculates the size of each historic bin
-        counts = [0] * bins # initializes an array to count items in each bin
+        bin_size = (max_val - min_val) / bins # calcule la taille de chaque bac de l'histogramme
+        counts = [0] * bins # initialise un tableau pour compter les éléments dans chaque bac
         for val in data:
-            i = int((val - min_val) / bin_size) # finds which bin the value belongs to
+            i = int((val - min_val) / bin_size) # trouve à quel bac la valeur appartient
             if i == bins:
-                i = bins - 1 # ensures the max value fits in the last bin
-            counts[i] += 1 # increments the bin counter
+                i = bins - 1 # s'assure que la valeur maximale rentre dans le dernier bac
+            counts[i] += 1 # incrémente le compteur du bac
             
-        print("\nScore Distribution:")
-        max_count = max(counts) # finds the bin with the most items to scale the text bars
+        print("\nDistribution des scores:")
+        max_count = max(counts) # trouve le bac avec le plus d'éléments pour mettre à l'échelle les barres de texte
         for i in range(bins):
-            lower = min_val + i * bin_size # calculates the lower bound of the bin
-            upper = lower + bin_size # calculates the upper bound of the bin
-            bar_len = int(counts[i] / max_count * 40) if max_count > 0 else 0 # scales the bar length up to 40 characters
-            bar = "#" * bar_len # creates the visual bar
-            print(f"  [{lower:>8.2f} : {upper:>8.2f}] | {counts[i]:>4} | {bar}") # prints the histogram row
+            lower = min_val + i * bin_size # calcule la borne inférieure du bac
+            upper = lower + bin_size # calcule la borne supérieure du bac
+            bar_len = int(counts[i] / max_count * 40) if max_count > 0 else 0 # met à l'échelle la longueur de la barre jusqu'à 40 caractères
+            bar = "#" * bar_len # crée la barre visuelle
+            print(f"  [{lower:>8.2f} : {upper:>8.2f}] | {counts[i]:>4} | {bar}") # imprime la ligne de l'histogramme
     except Exception as e:
-        print(f"Error in print_text_histogram: {e}")
+        print(f"Erreur dans print_text_histogram: {e}")
 
 def load_eval_model(algo_config, env_config, hypers):
-    """Loads the model based on the configuration."""
+    """Charge le modèle en fonction de la configuration."""
     try:
-        model_path = algo_config.get("save_path") # retrieves the path where the model weights are saved
+        model_path = algo_config.get("save_path") # récupère le chemin où les poids du modèle sont enregistrés
         if not model_path:
-            raise ValueError("Model weights path not found in config ('save_path')")
+            raise ValueError("Chemin des poids du modèle non trouvé dans la configuration ('save_path')")
         if not os.path.exists(model_path):
-            fallback_path = os.path.join("assets/agents_save", os.path.basename(model_path)) # tries to find the model in a default fallback folder
+            fallback_path = os.path.join("assets/agents_save", os.path.basename(model_path)) # essaie de trouver le modèle dans un dossier de secours par défaut
             if os.path.exists(fallback_path):
-                model_path = fallback_path # updates the path if found in fallback
-                print(f"Loading model from fallback: {model_path}")
+                model_path = fallback_path # met à jour le chemin s'il est trouvé dans le dossier de secours
+                print(f"Chargement du modèle depuis le dossier de secours: {model_path}")
             else:
-                raise FileNotFoundError(f"Model weights not found at '{model_path}' or '{fallback_path}'")
+                raise FileNotFoundError(f"Poids du modèle non trouvés à '{model_path}' ou '{fallback_path}'")
         else:
-            print(f"Loading model: {model_path}")
+            print(f"Chargement du modèle: {model_path}")
 
-        env = get_env(env_config) # creates a temporary environment to read its dimensions
-        state_size = env.observation_space.shape[0] # gets the size of the observation state
-        action_size = env.action_space.n # gets the number of possible actions
-        env.close() # destroys the temporary environment
-        hidden_size = hypers.get("hidden_size", 64) # retrieves the hidden layer size from the config
-        algo_name = algo_config.get("name") # gets the algorithm name
+        env = get_env(env_config) # crée un environnement temporaire pour lire ses dimensions
+        state_size = env.observation_space.shape[0] # obtient la taille de l'état d'observation
+        action_size = env.action_space.n # obtient le nombre d'actions possibles
+        env.close() # détruit l'environnement temporaire
+        hidden_size = hypers.get("hidden_size", 64) # récupère la taille de la couche cachée depuis la configuration
+        algo_name = algo_config.get("name") # obtient le nom de l'algorithme
 
         if "DQN" in algo_name:
-            model = QNetwork(state_size, action_size, hidden_size=hidden_size) # initializes DQN network
+            model = QNetwork(state_size, action_size, hidden_size=hidden_size) # initialise le réseau DQN
         elif "DoubleDQN" in algo_name:
-            model = DoubleDQNAgent(state_size, action_size, hypers) # initializes Double DQN agent
+            model = DoubleDQNAgent(state_size, action_size, hypers) # initialise l'agent Double DQN
         elif algo_name == "PPO":
-            print("Joseph ajoute ton algo ici") # placeholder for the PPO agent
+            print("Joseph ajoute ton algo ici") # espace réservé pour l'agent PPO
             sys.exit(1)
         else:
-            raise ValueError(f"Algorithm '{algo_name}' not recognized for evaluation.")
-        model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu'), weights_only=True)) # loads the trained weights into the model structure
-        model.eval() # sets the model to evaluation mode (disables dropout, etc.)
-        return model # returns the fully loaded model
+            raise ValueError(f"Algorithme '{algo_name}' non reconnu pour l'évaluation.")
+        model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu'), weights_only=True)) # charge les poids entraînés dans la structure du modèle
+        model.eval() # met le modèle en mode évaluation (désactive le dropout, etc.)
+        return model # retourne le modèle entièrement chargé
     except Exception as e:
-        print(f"Error in load_eval_model: {e}")
+        print(f"Erreur dans load_eval_model: {e}")
         sys.exit(1)
 
 def setup_directories(output_dir="eval_output"):
-    """Sets up the output directories and CSV file."""
+    """Met en place les répertoires de sortie et le fichier CSV."""
     try:
-        os.makedirs(output_dir, exist_ok=True) # creates the main output directory if it doesn't exist
-        results_csv = os.path.join(output_dir, "evaluation_results.csv") # defines the path for the results CSV
-        video_base_dir = os.path.join(output_dir, "eval_videos") # defines the path for the video recordings
-        os.makedirs(video_base_dir, exist_ok=True) # creates the video directory if it doesn't exist
+        os.makedirs(output_dir, exist_ok=True) # crée le répertoire de sortie principal s'il n'existe pas
+        results_csv = os.path.join(output_dir, "evaluation_results.csv") # définit le chemin pour le CSV des résultats
+        video_base_dir = os.path.join(output_dir, "eval_videos") # définit le chemin pour les enregistrements vidéo
+        os.makedirs(video_base_dir, exist_ok=True) # crée le répertoire vidéo s'il n'existe pas
         
         with open(results_csv, mode='w', newline='') as f:
-            csv_writer = csv.writer(f) # initializes the CSV writer
-            csv_writer.writerow(["Seed", "Episode", "Score", "Steps", "Cause"]) # writes the CSV header row
+            csv_writer = csv.writer(f) # initialise l'écrivain CSV
+            csv_writer.writerow(["Seed", "Episode", "Score", "Steps", "Cause"]) # écrit la ligne d'en-tête du CSV
             
-        return results_csv, video_base_dir # returns the generated paths
+        return results_csv, video_base_dir # retourne les chemins générés
     except Exception as e:
-        print(f"Error in setup_directories: {e}")
+        print(f"Erreur dans setup_directories: {e}")
         sys.exit(1)
 
 def evaluate_all_seeds(env_config, model, seeds, results_csv, video_base_dir):
-    """Runs the evaluation loop for all seeds."""
+    """Exécute la boucle d'évaluation pour toutes les graines."""
     try:
-        total_causes = {"sleep": 0, "out-of-view": 0, "crash": 0, "safe-landing": 0, "unknown": 0} # initializes a dictionary to count termination causes
-        all_scores = [] # list to store all episode scores
-        all_steps = [] # list to store all episode lengths
-        seed_means = {} # dictionary to store average scores per seed
-        eval_seeds = seeds.get("eval", [10, 20, 30, 40, 50]) # gets the list of seeds to evaluate from config
+        total_causes = {"endormi": 0, "hors-champ": 0, "crash": 0, "atterrissage-réussi": 0, "inconnue": 0} # initialise un dictionnaire pour compter les causes de fin
+        all_scores = [] # liste pour stocker tous les scores des épisodes
+        all_steps = [] # liste pour stocker toutes les longueurs d'épisodes
+        seed_means = {} # dictionnaire pour stocker les scores moyens par graine
+        eval_seeds = seeds.get("eval", [10, 20, 30, 40, 50]) # obtient la liste des graines à évaluer depuis la configuration
         if isinstance(eval_seeds, int):
-            eval_seeds = [eval_seeds] # ensures eval_seeds is a list even if only one seed is provided
-        episodes_per_seed = 100 # defines how many episodes to run per seed
-        print(f"Starting evaluation on {len(eval_seeds)} seeds ({episodes_per_seed} episodes per seed)...")
+            eval_seeds = [eval_seeds] # s'assure que eval_seeds est une liste même si une seule graine est fournie
+        episodes_per_seed = 100 # définit combien d'épisodes exécuter par graine
+        print(f"Début de l'évaluation sur {len(eval_seeds)} graines ({episodes_per_seed} épisodes par graine)...")
         
         for seed in eval_seeds:
-            print(f"\n--- Evaluating Seed: {seed} ---")
-            seed_scores = [] # list to store scores for the current seed
-            seed_video_dir = os.path.join(video_base_dir, f"seed_{seed}") # creates a specific video folder for this seed
-            env = get_env(env_config, video_folder=seed_video_dir) # initializes the environment for this specific seed
+            print(f"\n--- Évaluation de la graine: {seed} ---")
+            seed_scores = [] # liste pour stocker les scores de la graine actuelle
+            seed_video_dir = os.path.join(video_base_dir, f"seed_{seed}") # crée un dossier vidéo spécifique pour cette graine
+            env = get_env(env_config, video_folder=seed_video_dir) # initialise l'environnement pour cette graine spécifique
             
             for ep in range(episodes_per_seed):
-                score, cause, steps = run_episode(env, model, seed=seed + ep) # runs one full episode with a unique sub-seed
-                seed_scores.append(score) # saves the episode score locally
-                all_scores.append(score) # saves the episode score globally
-                all_steps.append(steps) # saves the episode length
-                total_causes[cause] += 1 # increments the specific termination cause counter
+                score, cause, steps = run_episode(env, model, seed=seed + ep) # exécute un épisode complet avec une sous-graine unique
+                seed_scores.append(score) # sauvegarde le score de l'épisode localement
+                all_scores.append(score) # sauvegarde le score de l'épisode globalement
+                all_steps.append(steps) # sauvegarde la longueur de l'épisode
+                total_causes[cause] += 1 # incrémente le compteur de la cause de fin spécifique
                 
                 with open(results_csv, mode='a', newline='') as f:
-                    csv.writer(f).writerow([seed, ep, round(score, 2), steps, cause]) # appends the episode results to the CSV file
-                score_avg = sum(seed_scores) / len(seed_scores) # calculates the rolling average score for this seed
-                print(f"Seed {seed} | Ep {ep} | Score: {score:>7.2f} | Moy(seed): {score_avg:>7.2f} | Fin: {cause}")
-            s_mean, s_std, s_ci = calculate_stats(seed_scores) # calculates the final statistics for this seed
-            seed_means[seed] = s_mean # stores the final average score of this seed
-            print(f"\nStats for Seed {seed}:")
-            print(f"  - Average Score: {s_mean:.2f}")
-            print(f"  - Std Deviation: {s_std:.2f}")
-            print(f"  - 95% Conf. Int: ±{s_ci:.2f}")
-            env.close() # cleanly closes the environment
-        return all_scores, all_steps, total_causes, seed_means # returns all the collected metrics
+                    csv.writer(f).writerow([seed, ep, round(score, 2), steps, cause]) # ajoute les résultats de l'épisode au fichier CSV
+                score_avg = sum(seed_scores) / len(seed_scores) # calcule le score moyen glissant pour cette graine
+                print(f"Graine {seed} | Ep {ep} | Score: {score:>7.2f} | Moy(graine): {score_avg:>7.2f} | Fin: {cause}")
+            s_mean, s_std, s_ci = calculate_stats(seed_scores) # calcule les statistiques finales pour cette graine
+            seed_means[seed] = s_mean # stocke le score moyen final de cette graine
+            print(f"\nStatistiques pour la graine {seed}:")
+            print(f"  - Score moyen: {s_mean:.2f}")
+            print(f"  - Écart type: {s_std:.2f}")
+            print(f"  - Int. de conf. 95%: ±{s_ci:.2f}")
+            env.close() # ferme proprement l'environnement
+        return all_scores, all_steps, total_causes, seed_means # retourne toutes les métriques collectées
     except KeyboardInterrupt:
         raise
     except Exception as e:
-        print(f"Error in evaluate_all_seeds: {e}")
+        print(f"Erreur dans evaluate_all_seeds: {e}")
         sys.exit(1)
 
 def print_final_summary(all_scores, all_steps, total_causes, seed_means, results_csv, video_base_dir):
-    """Prints the final summary of the evaluation."""
+    """Affiche le résumé final de l'évaluation."""
     try:
         if not all_scores:
-            print("No evaluation data to summarize.") # exits early if no data was collected
+            print("Aucune donnée d'évaluation à résumer.") # quitte tôt si aucune donnée n'a été collectée
             return
 
-        final_mean, final_std, final_ci = calculate_stats(all_scores) # calculates the global statistics across all seeds
-        avg_steps = sum(all_steps) / len(all_steps) # calculates the global average episode length
-        success_rate = (total_causes.get("safe-landing", 0) / len(all_scores)) * 100 # calculates the overall success percentage
+        final_mean, final_std, final_ci = calculate_stats(all_scores) # calcule les statistiques globales sur toutes les graines
+        avg_steps = sum(all_steps) / len(all_steps) # calcule la longueur moyenne globale des épisodes
+        success_rate = (total_causes.get("atterrissage-réussi", 0) / len(all_scores)) * 100 # calcule le pourcentage de réussite global
         
         print("\n" + "="*40)
-        print("FINAL EVALUATION SUMMARY")
-        print(f"Total episodes      : {len(all_scores)}") # displays the total number of episodes played
-        print(f"Overall Average     : {final_mean:.2f}") # displays the overall average score
-        print(f"Overall Std Dev     : {final_std:.2f}") # displays the overall data spread
-        print(f"Overall 95% CI      : ±{final_ci:.2f}") # displays the global confidence interval
-        print(f"Avg Episode Length  : {avg_steps:.1f} steps") # displays the average survival time
-        print(f"Success Rate        : {success_rate:.1f}%") # displays the landing success rate
+        print("RÉSUMÉ FINAL DE L'ÉVALUATION")
+        print(f"Épisodes totaux     : {len(all_scores)}") # affiche le nombre total d'épisodes joués
+        print(f"Moyenne globale     : {final_mean:.2f}") # affiche le score moyen global
+        print(f"Écart type global   : {final_std:.2f}") # affiche la dispersion globale des données
+        print(f"Int. de conf. 95%   : ±{final_ci:.2f}") # affiche l'intervalle de confiance global
+        print(f"Durée moy. épisode  : {avg_steps:.1f} étapes") # affiche le temps de survie moyen
+        print(f"Taux de réussite    : {success_rate:.1f}%") # affiche le taux de réussite d'atterrissage
         print("-" * 20)
-        print("Means by Seed:")
+        print("Moyennes par graine:")
         for s, s_mean in seed_means.items():
-            print(f"  - Seed {s:<4}: {s_mean:.2f}") # prints the specific average score for each individual seed
+            print(f"  - Graine {s:<4}: {s_mean:.2f}") # imprime le score moyen spécifique pour chaque graine individuelle
         print("-" * 20)
         
-        print_hist(all_scores) # prints the visual score distribution
+        print_hist(all_scores) # imprime la distribution visuelle des scores
         
         print("-" * 20)
-        print("Termination Reasons:")
+        print("Raisons de la fin:")
         for reason, count in total_causes.items():
-            percentage = (count / len(all_scores)) * 100 if all_scores else 0 # calculates the occurrence percentage for each cause
-            print(f"  - {reason:12}: {count} ({percentage:.1f}%)") # prints the cause distribution
+            percentage = (count / len(all_scores)) * 100 if all_scores else 0 # calcule le pourcentage d'occurrence pour chaque cause
+            print(f"  - {reason:12}: {count} ({percentage:.1f}%)") # imprime la distribution des causes
         print("="*40)
-        print(f"Detailed logs saved in: {results_csv}") # reminds the user where the CSV is saved
-        print(f"Videos saved in: {video_base_dir}") # reminds the user where the videos are saved
+        print(f"Logs détaillés enregistrés dans: {results_csv}") # rappelle à l'utilisateur où le CSV est enregistré
+        print(f"Vidéos enregistrées dans: {video_base_dir}") # rappelle à l'utilisateur où les vidéos sont enregistrées
     except Exception as e:
-        print(f"Error in print_final_summary: {e}")
+        print(f"Erreur dans print_final_summary: {e}")
 
 def main():
-    """Main entry point."""
+    """Point d'entrée principal."""
     try:
         if len(sys.argv) < 2:
-            print("Usage: python eval.py <path_to_config.yaml>") # displays the correct script usage if no config is provided
+            print("Usage: python eval.py <chemin_vers_config.yaml>") # affiche l'usage correct du script si aucune configuration n'est fournie
             sys.exit(1)
 
-        config_path = sys.argv[1] # gets the config path from the command line arguments
-        config = load_config(config_path) # parses the yaml configuration file
+        config_path = sys.argv[1] # obtient le chemin de la configuration depuis les arguments de la ligne de commande
+        config = load_config(config_path) # parse le fichier de configuration yaml
         if config is None:
-            sys.exit(1) # exits if the config file couldn't be loaded
+            sys.exit(1) # quitte si le fichier de configuration n'a pas pu être chargé
 
-        algo_config = config.get("algorithm", {}) # extracts algorithm specific settings
-        env_config = config.get("environment", {}) # extracts environment specific settings
-        hypers = config.get("hyperparameters", {}) # extracts model hyperparameters
-        seeds = config.get("seeds", {}) # extracts the seeds to evaluate
+        algo_config = config.get("algorithm", {}) # extrait les paramètres spécifiques à l'algorithme
+        env_config = config.get("environment", {}) # extrait les paramètres spécifiques à l'environnement
+        hypers = config.get("hyperparameters", {}) # extrait les hyperparamètres du modèle
+        seeds = config.get("seeds", {}) # extrait les graines à évaluer
 
-        model = load_eval_model(algo_config, env_config, hypers) # loads the model into memory
-        results_csv, video_base_dir = setup_directories() # prepares output folders
+        model = load_eval_model(algo_config, env_config, hypers) # charge le modèle en mémoire
+        results_csv, video_base_dir = setup_directories() # prépare les dossiers de sortie
 
         try:
-            all_scores, all_steps, total_causes, seed_means = evaluate_all_seeds( # runs the actual evaluation loop
+            all_scores, all_steps, total_causes, seed_means = evaluate_all_seeds( # exécute la boucle d'évaluation réelle
                 env_config, model, seeds, results_csv, video_base_dir
             )
-            print_final_summary(all_scores, all_steps, total_causes, seed_means, results_csv, video_base_dir) # prints the final comprehensive report
+            print_final_summary(all_scores, all_steps, total_causes, seed_means, results_csv, video_base_dir) # imprime le rapport complet final
         except KeyboardInterrupt:
-            print("\nEvaluation stopped by user.") # handles exit if the user presses Ctrl+C
+            print("\nÉvaluation arrêtée par l'utilisateur.") # gère la sortie si l'utilisateur appuie sur Ctrl+C
     except Exception as e:
-        print(f"Error in main: {e}")
+        print(f"Erreur dans main: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":
