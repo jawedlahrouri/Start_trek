@@ -198,12 +198,12 @@ def run_single_test(test_id, total_tests, combo, fixed_hypers):
 
 grid_ppo = {
     "algorithm": ["PPO"],
-    "episodes": [7500, 10000, 12500, 15000],
+    "episodes": [7500, 10000, 12500],
     "learning_rate": [3e-4, 5e-4, 3.0e-4],
     "update_timestep": [1024, 2048, 4096],
     "ppo_epochs": [4, 10],
-    "epsilon_decay": [0.2, 0.08, 0.35, 0.5],
-    "hidden_size": [32, 64, 128]
+    "epsilon_decay": [0.2, 0.08, 0.35],
+    "hidden_size": [64, 128]
 }
 
 fixed_hypers = {"gamma": 0.99}
@@ -277,9 +277,12 @@ if __name__ == "__main__":
                            f"**Avancement:** {tests_completed}/{total_tests} (ETA: ⏳ `{eta_formatted}`)\n"
                            f"**Score Éval:** `{result['eval_score_mean']:.2f} pts` | Valid: `{result['is_valid']}`\n"
                            f"**Configuration :**\n{param_str}")
-
-                if is_top_1 or is_top_3:
-                    send_discord_message(msg)
+                else:
+                    msg = (f"✅ Test {test_number} terminé.\n"
+                           f"**Avancement:** {tests_completed}/{total_tests} (ETA: ⏳ `{eta_formatted}`)\n"
+                           f"**Score Éval:** `{result['eval_score_mean']:.2f} pts` | Valid: `{result['is_valid']}`\n"
+                           f"**Configuration :**\n{param_str}")
+                send_discord_message(msg)
                     
             except Exception as e:
                 print(f"Erreur critique sur un worker : {e}")
