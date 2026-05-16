@@ -8,17 +8,17 @@ algorithm:
   save_path: "lunar_lander_model.pth"
 
 hyperparameters:
-  learning_rate: 3.0e-4
+  learning_rate: 5.0e-4
   gamma: 0.99
   batch_size: 64
   buffer_capacity: 30000
   epsilon_decay: 0.2
-  ppo_epochs: 4
-  hidden_size: 64
+  ppo_epochs: 10
+  hidden_size: 128
 
 seeds:
   train: 67
   eval: 42
 
 training:
-  episodes: 10000
+  episodes: 7500
