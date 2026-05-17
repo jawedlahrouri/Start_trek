@@ -7,7 +7,7 @@ import math
 import statistics
 import csv
 from gymnasium.wrappers import RecordVideo
-from src.agents.dqn_agent import QNetwork
+from src.agents.dqn_agent import DQNAgent, QNetwork
 from src.agents.ppo_agent import PPOAgent
 from src.agents.doubledqn_agent import DoubleDQNAgent
 from src.config_loader import load_config
@@ -65,7 +65,7 @@ def get_env(env_config, video_folder=None):
         print(f"Erreur dans get_env: {e}")
         sys.exit(1)
 
-def run_episode(env, model, seed=None):
+def run_episode(env, agent, algo_name, seed=None):
     """Exécute un seul épisode et retourne le score et la cause de la fin."""
     try:
         obs, info = env.reset(seed=seed) # réinitialise l'environnement à un état frais en utilisant la graine
@@ -76,8 +76,12 @@ def run_episode(env, model, seed=None):
         while not done:
             state_tensor = torch.tensor(obs, dtype=torch.float32).unsqueeze(0) # transforme les données de l'environnement en données compréhensibles par torch
             with torch.no_grad(): # désactive le calcul des gradients pour économiser de la mémoire et accélérer l'évaluation
-                q_values = model(state_tensor) # obtient les valeurs q pour toutes les actions possibles du modèle
-                action = q_values.argmax().item() # sélectionne l'action avec la plus grande valeur q
+                if algo_name == "PPO":
+                    action_probs = agent.actor(state_tensor)
+                    action = action_probs.argmax().item()
+                else:
+                    q_values = agent.q_net(state_tensor)
+                    action = q_values.argmax().item()
             obs, reward, terminated, truncated, info = env.step(action) # joue l'action sélectionnée dans l'environnement
             score += reward # accumule la récompense pour calculer le score final
             done = terminated or truncated # vérifie si l'épisode est terminé
@@ -127,8 +131,8 @@ def print_hist(data, bins=10):
     except Exception as e:
         print(f"Erreur dans print_text_histogram: {e}")
 
-def load_eval_model(algo_config, env_config, hypers):
-    """Charge le modèle en fonction de la configuration."""
+def load_eval_agent(algo_config, env_config, hypers):
+    """Charge l'agent configuré pour l'évaluation."""
     try:
         model_path = algo_config.get("save_path") # récupère le chemin où les poids du modèle sont enregistrés
         if not model_path:
@@ -147,22 +151,37 @@ def load_eval_model(algo_config, env_config, hypers):
         state_size = env.observation_space.shape[0] # obtient la taille de l'état d'observation
         action_size = env.action_space.n # obtient le nombre d'actions possibles
         env.close() # détruit l'environnement temporaire
-        hidden_size = hypers.get("hidden_size", 64) # récupère la taille de la couche cachée depuis la configuration
         algo_name = algo_config.get("name") # obtient le nom de l'algorithme
 
-        if "DQN" in algo_name:
-            model = QNetwork(state_size, action_size, hidden_size=hidden_size) # initialise le réseau DQN
-        elif "DoubleDQN" in algo_name:
-            model = DoubleDQNAgent(state_size, action_size, hypers) # initialise l'agent Double DQN
+        if algo_name == "DQN":
+            agent = DQNAgent(state_size, action_size, hypers) # initialise l'agent DQN
+            agent.q_net.load_state_dict(torch.load(model_path, map_location=torch.device('cpu'), weights_only=True))
+            agent.target_net.load_state_dict(agent.q_net.state_dict())
+            agent.epsilon = 0.0
+        elif algo_name == "DoubleDQN":
+            agent = DoubleDQNAgent(state_size, action_size, hypers) # initialise l'agent Double DQN
+            agent.q_net.load_state_dict(torch.load(model_path, map_location=torch.device('cpu'), weights_only=True))
+            agent.target_net.load_state_dict(agent.q_net.state_dict())
+            agent.epsilon = 0.0
         elif algo_name == "PPO":
             agent = PPOAgent(state_size, action_size, hypers) # initialise l'agent PPO
+            checkpoint = torch.load(model_path, map_location=torch.device('cpu'), weights_only=True)
+            agent.actor.load_state_dict(checkpoint['actor_state_dict'])
+            agent.critic.load_state_dict(checkpoint['critic_state_dict'])
         else:
             raise ValueError(f"Algorithme '{algo_name}' non reconnu pour l'évaluation.")
-        model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu'), weights_only=True)) # charge les poids entraînés dans la structure du modèle
-        model.eval() # met le modèle en mode évaluation (désactive le dropout, etc.)
-        return model # retourne le modèle entièrement chargé
+        
+        # Mettre les réseaux en mode évaluation (eval)
+        if hasattr(agent, "q_net"):
+            agent.q_net.eval()
+        if hasattr(agent, "actor"):
+            agent.actor.eval()
+        if hasattr(agent, "critic"):
+            agent.critic.eval()
+            
+        return agent # retourne l'agent entièrement chargé
     except Exception as e:
-        print(f"Erreur dans load_eval_model: {e}")
+        print(f"Erreur dans load_eval_agent: {e}")
         sys.exit(1)
 
 def setup_directories(output_dir="eval_output"):
@@ -182,7 +201,7 @@ def setup_directories(output_dir="eval_output"):
         print(f"Erreur dans setup_directories: {e}")
         sys.exit(1)
 
-def evaluate_all_seeds(env_config, model, seeds, results_csv, video_base_dir):
+def evaluate_all_seeds(env_config, agent, algo_name, seeds, results_csv, video_base_dir):
     """Exécute la boucle d'évaluation pour toutes les graines."""
     try:
         total_causes = {"endormi": 0, "hors-champ": 0, "crash": 0, "atterrissage-réussi": 0, "inconnue": 0} # initialise un dictionnaire pour compter les causes de fin
@@ -192,17 +211,18 @@ def evaluate_all_seeds(env_config, model, seeds, results_csv, video_base_dir):
         eval_seeds = seeds.get("eval", [10, 20, 30, 40, 50]) # obtient la liste des graines à évaluer depuis la configuration
         if isinstance(eval_seeds, int):
             eval_seeds = [eval_seeds] # s'assure que eval_seeds est une liste même si une seule graine est fournie
-        episodes_per_seed = 100 # définit combien d'épisodes exécuter par graine
+        episodes_per_seed = seeds.get("episodes_per_seed", 100) # définit combien d'épisodes exécuter par graine
         print(f"Début de l'évaluation sur {len(eval_seeds)} graines ({episodes_per_seed} épisodes par graine)...")
         
         for seed in eval_seeds:
             print(f"\n--- Évaluation de la graine: {seed} ---")
             seed_scores = [] # liste pour stocker les scores de la graine actuelle
-            seed_video_dir = os.path.join(video_base_dir, f"seed_{seed}") # crée un dossier vidéo spécifique pour cette graine
+            record_video = env_config.get("record_video", True) # par défaut True pour préserver le comportement
+            seed_video_dir = os.path.join(video_base_dir, f"seed_{seed}") if record_video else None
             env = get_env(env_config, video_folder=seed_video_dir) # initialise l'environnement pour cette graine spécifique
             
             for ep in range(episodes_per_seed):
-                score, cause, steps = run_episode(env, model, seed=seed + ep) # exécute un épisode complet avec une sous-graine unique
+                score, cause, steps = run_episode(env, agent, algo_name, seed=seed + ep) # exécute un épisode complet avec une sous-graine unique
                 seed_scores.append(score) # sauvegarde le score de l'épisode localement
                 all_scores.append(score) # sauvegarde le score de l'épisode globalement
                 all_steps.append(steps) # sauvegarde la longueur de l'épisode
@@ -281,12 +301,13 @@ def main():
         hypers = config.get("hyperparameters", {}) # extrait les hyperparamètres du modèle
         seeds = config.get("seeds", {}) # extrait les graines à évaluer
 
-        model = load_eval_model(algo_config, env_config, hypers) # charge le modèle en mémoire
+        algo_name = algo_config.get("name")
+        agent = load_eval_agent(algo_config, env_config, hypers) # charge l'agent en mémoire
         results_csv, video_base_dir = setup_directories() # prépare les dossiers de sortie
 
         try:
             all_scores, all_steps, total_causes, seed_means = evaluate_all_seeds( # exécute la boucle d'évaluation réelle
-                env_config, model, seeds, results_csv, video_base_dir
+                env_config, agent, algo_name, seeds, results_csv, video_base_dir
             )
             print_final_summary(all_scores, all_steps, total_causes, seed_means, results_csv, video_base_dir) # imprime le rapport complet final
         except KeyboardInterrupt:
