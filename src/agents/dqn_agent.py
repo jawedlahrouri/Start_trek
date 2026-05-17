@@ -59,6 +59,7 @@ class DQNAgent(BaseAgent):
         self.optimizer = optim.Adam(self.q_net.parameters(), lr=lr)
         buffer_capacity = hypers.get("buffer_capacity", 10000)
         self.memory = ReplayBuffer(buffer_capacity)
+        self.last_loss = 0.0
 
     def select_action(self, state, current_episode=None):
         if random.random() < self.epsilon:
@@ -85,13 +86,14 @@ class DQNAgent(BaseAgent):
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+        self.last_loss = loss.item()
         if self.update_type == "soft":
             for target_param, local_param in zip(self.target_net.parameters(), self.q_net.parameters()):
                 target_param.data.copy_(self.tau * local_param.data + (1.0 - self.tau) * target_param.data)
         elif self.update_type == "hard":
             if self.steps_done % self.target_update_freq == 0:
                 self.target_net.load_state_dict(self.q_net.state_dict())
-        return loss.item()
+        return self.last_loss
 
     def decay_epsilon(self):
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
