@@ -8,6 +8,7 @@ import statistics
 import csv
 from gymnasium.wrappers import RecordVideo
 from src.agents.dqn_agent import QNetwork
+from src.agents.ppo_agent import PPOAgent
 from src.agents.doubledqn_agent import DoubleDQNAgent
 from src.config_loader import load_config
 
@@ -80,7 +81,7 @@ def run_episode(env, model, seed=None):
             obs, reward, terminated, truncated, info = env.step(action) # joue l'action sélectionnée dans l'environnement
             score += reward # accumule la récompense pour calculer le score final
             done = terminated or truncated # vérifie si l'épisode est terminé
-            steps += 1 # incrémente le compteur de pas
+            steps += 1 # incrémente le compteur d'etape
         cause = "inconnue"
         if truncated: 
             cause = "endormi" # l'agent a mis trop de temps à atterrir
@@ -154,8 +155,7 @@ def load_eval_model(algo_config, env_config, hypers):
         elif "DoubleDQN" in algo_name:
             model = DoubleDQNAgent(state_size, action_size, hypers) # initialise l'agent Double DQN
         elif algo_name == "PPO":
-            print("Joseph ajoute ton algo ici") # espace réservé pour l'agent PPO
-            sys.exit(1)
+            agent = PPOAgent(state_size, action_size, hypers) # initialise l'agent PPO
         else:
             raise ValueError(f"Algorithme '{algo_name}' non reconnu pour l'évaluation.")
         model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu'), weights_only=True)) # charge les poids entraînés dans la structure du modèle
