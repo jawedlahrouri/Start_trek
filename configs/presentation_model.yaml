@@ -6,7 +6,7 @@ environment:
 algorithm:
   name: "DQN"
   log_dir: "runs/presentation_model"
-  save_path: "presentation_model_save.pth"
+  save_path: "presentation_model.pth"
 
 hyperparameters:
   learning_rate: 0.00075
