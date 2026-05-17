@@ -235,9 +235,10 @@ def evaluate_all_seeds(env_config, agent, algo_name, seeds, results_csv, video_b
             s_mean, s_std, s_ci = calculate_stats(seed_scores) # calcule les statistiques finales pour cette graine
             seed_means[seed] = s_mean # stocke le score moyen final de cette graine
             print(f"\nStatistiques pour la graine {seed}:")
+            ci_percent = (s_ci / abs(s_mean) * 100) if s_mean != 0 else 0.0
             print(f"  - Score moyen: {s_mean:.2f}")
             print(f"  - Écart type: {s_std:.2f}")
-            print(f"  - Int. de conf. 95%: ±{s_ci:.2f}")
+            print(f"  - Int. de conf. 95%: ±{s_ci:.2f} (±{ci_percent:.1f}%)")
             env.close() # ferme proprement l'environnement
         return all_scores, all_steps, total_causes, seed_means # retourne toutes les métriques collectées
     except KeyboardInterrupt:
@@ -260,9 +261,10 @@ def print_final_summary(all_scores, all_steps, total_causes, seed_means, results
         print("\n" + "="*40)
         print("RÉSUMÉ FINAL DE L'ÉVALUATION")
         print(f"Épisodes totaux     : {len(all_scores)}") # affiche le nombre total d'épisodes joués
-        print(f"Moyenne globale     : {final_mean:.2f}") # affiche le score moyen global
-        print(f"Écart type global   : {final_std:.2f}") # affiche la dispersion globale des données
-        print(f"Int. de conf. 95%   : ±{final_ci:.2f}") # affiche l'intervalle de confiance global
+        grand_ci_percent = (final_ci / abs(final_mean) * 100) if final_mean != 0 else 0.0
+        print(f"Moyenne globale     : {final_mean:.2f}")
+        print(f"Écart type global   : {final_std:.2f}")
+        print(f"Int. de conf. 95%   : ±{final_ci:.2f} (±{grand_ci_percent:.1f}%)")
         print(f"Durée moy. épisode  : {avg_steps:.1f} étapes") # affiche le temps de survie moyen
         print(f"Taux de réussite    : {success_rate:.1f}%") # affiche le taux de réussite d'atterrissage
         print("-" * 20)
