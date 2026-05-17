@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import random
+import os
 from collections import deque
 from src.agents.base_agent import BaseAgent
 
@@ -41,24 +42,24 @@ class ReplayBuffer:
 class DoubleDQNAgent(BaseAgent):
     def __init__(self, state_size, action_size, hypers):
         super().__init__(state_size, action_size, hypers)
-        self.batch_size = hypers.get("batch_size")
-        self.gamma = hypers.get("gamma")
+        self.batch_size = hypers.get("batch_size", 64)
+        self.gamma = hypers.get("gamma", 0.99)
         self.update_type = hypers.get("update_type", "soft")
         self.tau = hypers.get("tau", 1e-3)
         self.target_update_freq = hypers.get("target_update_freq", 1000)
-        self.steps_done = 0
-        self.epsilon = hypers.get("epsilon_start")
-        self.epsilon_min = hypers.get("epsilon_min")
-        self.epsilon_decay = hypers.get("epsilon_decay")
-        hidden_size = hypers.get("hidden_size", 64)
+        self.epsilon = hypers.get("epsilon_start", 1.0)
+        self.epsilon_min = hypers.get("epsilon_min", 0.01)
+        self.epsilon_decay = hypers.get("epsilon_decay", 0.995)
+        hidden_size = hypers.get("hidden_size", 128)
         self.q_net = QNetwork(state_size, action_size, hidden_size)
         self.target_net = QNetwork(state_size, action_size, hidden_size)
         self.target_net.load_state_dict(self.q_net.state_dict())
         self.target_net.eval()
-        lr = hypers.get("learning_rate")
+        lr = hypers.get("learning_rate", 5e-4)
         self.optimizer = optim.Adam(self.q_net.parameters(), lr=lr)
-        buffer_capacity = hypers.get("buffer_capacity", 10000)
-        self.memory = ReplayBuffer(buffer_capacity)
+        self.memory = ReplayBuffer(hypers.get("buffer_capacity", 50000))
+        self.steps_done = 0
+        self.last_loss = 0.0
 
     def select_action(self, state, current_episode=None):
         if random.random() < self.epsilon:
@@ -86,23 +87,25 @@ class DoubleDQNAgent(BaseAgent):
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+        self.last_loss = loss.item()
         if self.update_type == "soft":
             for target_param, local_param in zip(self.target_net.parameters(), self.q_net.parameters()):
                 target_param.data.copy_(self.tau * local_param.data + (1.0 - self.tau) * target_param.data)
         elif self.update_type == "hard":
             if self.steps_done % self.target_update_freq == 0:
                 self.target_net.load_state_dict(self.q_net.state_dict())
-        return loss.item()
+        return self.last_loss
 
     def decay_epsilon(self):
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
 
     def get_logs(self):
-        return {"epsilon": self.epsilon}
+        return {"loss": self.last_loss, "epsilon": self.epsilon}
 
     def save(self, path):
         torch.save(self.q_net.state_dict(), path)
 
     def load(self, path):
-        self.q_net.load_state_dict(torch.load(path))
-        self.target_net.load_state_dict(self.q_net.state_dict())
+        if os.path.exists(path):
+            self.q_net.load_state_dict(torch.load(path))
+            self.target_net.load_state_dict(self.q_net.state_dict())
