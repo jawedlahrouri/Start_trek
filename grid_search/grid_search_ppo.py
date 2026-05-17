@@ -216,7 +216,7 @@ if __name__ == "__main__":
     leaderboard = []
     
     send_discord_message(f"**DÉMARRAGE DU GRID SEARCH PPO PARALLÉLISÉ**\n"
-                         f"**{total_tests} combinaisons** à tester. Décollage imminent ! 🚀\n")
+                         f"**{total_tests} combinaisons** à tester.\n")
     
     max_workers = 6 
     start_time = time.time()
@@ -268,18 +268,18 @@ if __name__ == "__main__":
                 param_str = "\n".join([f"> `{k}` : {v}" for k, v in result.items() if k.startswith("param_")])
 
                 if is_top_1:
-                    msg = (f"🚨 🏆 **NOUVEAU LEADER ABSOLU PPO (TOP 1) !** 🏆 🚨\n"
-                           f"**Avancement:** {tests_completed}/{total_tests} (ETA: ⏳ `{eta_formatted}`)\n"
+                    msg = (f" **NOUVEAU LEADER ABSOLU PPO (TOP 1) !** \n"
+                           f"**Avancement:** {tests_completed}/{total_tests} (ETA: `{eta_formatted}`)\n"
                            f"**Score Éval:** `{result['eval_score_mean']:.2f} pts` | Valid: `{result['is_valid']}`\n"
                            f"**Configuration :**\n{param_str}")
                 elif is_top_3:
-                    msg = (f"🌟 **NOUVELLE ENTRÉE DANS LE TOP 3 PPO !** 🌟\n"
-                           f"**Avancement:** {tests_completed}/{total_tests} (ETA: ⏳ `{eta_formatted}`)\n"
+                    msg = (f" **NOUVELLE ENTRÉE DANS LE TOP 3 PPO !** \n"
+                           f"**Avancement:** {tests_completed}/{total_tests} (ETA: `{eta_formatted}`)\n"
                            f"**Score Éval:** `{result['eval_score_mean']:.2f} pts` | Valid: `{result['is_valid']}`\n"
                            f"**Configuration :**\n{param_str}")
                 else:
-                    msg = (f"✅ Test {test_number} terminé.\n"
-                           f"**Avancement:** {tests_completed}/{total_tests} (ETA: ⏳ `{eta_formatted}`)\n"
+                    msg = (f" Test {test_number} terminé.\n"
+                           f"**Avancement:** {tests_completed}/{total_tests} (ETA: `{eta_formatted}`)\n"
                            f"**Score Éval:** `{result['eval_score_mean']:.2f} pts` | Valid: `{result['is_valid']}`\n"
                            f"**Configuration :**\n{param_str}")
                 send_discord_message(msg)
@@ -287,4 +287,4 @@ if __name__ == "__main__":
             except Exception as e:
                 print(f"Erreur critique sur un worker : {e}")
 
-    send_discord_message("@here 🏁 **GRID SEARCH PPO TERMINÉ !** 🏁\nToutes les métriques ont été sauvegardées !")
+    send_discord_message("@here **GRID SEARCH PPO TERMINÉ !**\nToutes les métriques ont été sauvegardées !")

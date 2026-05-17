@@ -155,7 +155,7 @@ def run_single_test(test_id, total_tests, combo, fixed_hypers):
     eval_env.close()
     writer.close()
     
-    # --- CALCUL DES NOUVELLES MÉTRIQUES ---
+    #CALCUL DES NOUVELLES MÉTRIQUES
     eval_list = list(eval_scores_per_seed.values())
     grand_mean_score = sum(eval_list) / len(eval_list)
     max_eval_score = max(eval_list)
@@ -185,7 +185,7 @@ def run_single_test(test_id, total_tests, combo, fixed_hypers):
     
     worker_duration = time.time() - start_time_worker
     
-    # --- CRÉATION DU DICTIONNAIRE CSV ---
+    # CRÉATION DU DICTIONNAIRE CSV
     result_dict = {
         "test_id": test_id,
         "run_name": run_name,
@@ -233,7 +233,7 @@ def run_single_test(test_id, total_tests, combo, fixed_hypers):
     
     return result_dict
 
-# --- GRILLES ---
+# GRILLES
 grid_soft = {
     "algorithm": ["DQN"],
     "episodes": [500, 800, 1000, 1200, 1500],
@@ -326,13 +326,13 @@ if __name__ == "__main__":
                 param_str = "\n".join([f"> `{k}` : {v}" for k, v in result.items() if k.startswith("param_")])
 
                 if is_top_1:
-                    msg = (f"🚨 🏆 **NOUVEAU LEADER ABSOLU (TOP 1) !** 🏆 🚨\n"
-                           f"**Avancement:** {tests_completed}/{total_tests} (ETA: ⏳ `{eta_formatted}`)\n"
+                    msg = (f"**NOUVEAU LEADER ABSOLU (TOP 1) !** \n"
+                           f"**Avancement:** {tests_completed}/{total_tests} (ETA: `{eta_formatted}`)\n"
                            f"**Score Éval:** `{result['eval_score_mean']:.2f} pts` | Valid: `{result['is_valid']}`\n"
                            f"**Configuration :**\n{param_str}")
                 elif is_top_3:
-                    msg = (f"🌟 **NOUVELLE ENTRÉE DANS LE TOP 3 !** 🌟\n"
-                           f"**Avancement:** {tests_completed}/{total_tests} (ETA: ⏳ `{eta_formatted}`)\n"
+                    msg = (f"**NOUVELLE ENTRÉE DANS LE TOP 3 !**\n"
+                           f"**Avancement:** {tests_completed}/{total_tests} (ETA: `{eta_formatted}`)\n"
                            f"**Score Éval:** `{result['eval_score_mean']:.2f} pts` | Valid: `{result['is_valid']}`\n"
                            f"**Configuration :**\n{param_str}")
 
@@ -342,4 +342,4 @@ if __name__ == "__main__":
             except Exception as e:
                 print(f"Erreur critique sur un worker : {e}")
 
-    send_discord_message("@here 🏁 **GRID SEARCH TERMINÉ !** 🏁\nToutes les métriques analytiques ont été sauvegardées dans le fichier CSV sur le serveur.")
+    send_discord_message("@here **GRID SEARCH TERMINÉ !**\nToutes les métriques analytiques ont été sauvegardées dans le fichier CSV sur le serveur.")
