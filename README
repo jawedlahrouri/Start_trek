@@ -36,7 +36,7 @@ Pour lancer un nouvel entraînement basé sur un fichier de configuration YAML :
 ```bash
 python train.py <fichier_de_configs>
 ```
-*Le script utilise par défaut les paramètres définis dans `configs/elite_dqn.yaml`. Vous pouvez suivre l'apprentissage en direct avec TensorBoard via la commande : `tensorboard --logdir runs/`.*
+*Le script utilise par défaut les paramètres définis dans `configs/default_configs.yaml`. Vous pouvez suivre l'apprentissage en direct avec TensorBoard via la commande : `tensorboard --logdir runs/`.*
 
 ### 3. Recherche d'Hyperparamètres
 Pour relancer notre infrastructure de Grid Search massive :
@@ -90,6 +90,7 @@ Ce projet contient une documentation pour expliquer chacun de nos choix. Nous av
 
 Nous vous invitons fortement à consulter le dossier `documentation/` pour :
 
+- Avoir un compte rendu global du projet (`Rapport_start_trek.pdf`)
 - Comprendre l'évolution de notre pipeline d'entraînement (`train.md`).
 - Lire les justifications mathématiques de l'architecture de nos agents (`dqn.md` / `Documentation PPO.pdf`).
 - Consulter l'analyse de nos résultats de Grid Search prouvant la prévention de l'overfitting.
