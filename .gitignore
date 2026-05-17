@@ -17,4 +17,3 @@ lunar_lander_model.pth
 runs/
 *.venv*
 *.log
-eval_output/
