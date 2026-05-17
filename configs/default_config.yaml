@@ -1,25 +1,28 @@
 environment:
   name: "LunarLander-v3"
+  render_mode: null
+  record_video: false
 
 algorithm:
   name: "DQN"
-  log_dir: "runs/exp_fast"
-  save_path: "exp_fast_model.pth"
+  log_dir: "runs/presentation_model"
+  save_path: "presentation_model.pth"
 
 hyperparameters:
-  learning_rate: 2.0e-3
-  gamma: 0.95
-  tau: 5.0e-3
-  batch_size: 128
-  buffer_capacity: 10000
-  hidden_size: 32
-  epsilon_start: 0.5
-  epsilon_decay: 0.9
-  epsilon_min: 0.05
-
-seeds:
-  train: 123
-  eval: 456
+  learning_rate: 0.00075
+  batch_size: 64
+  hidden_size: 64
+  epsilon_decay: 0.99
+  update_type: "soft"
+  tau: 0.001 
+  gamma: 0.99
+  buffer_capacity: 30000
+  epsilon_start: 1.0
+  epsilon_min: 0.01
 
 training:
-  episodes: 10
+  episodes: 400
+
+seeds:
+  train: 42
+  eval: [137, 50, 15, 67, 23]
